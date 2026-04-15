@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PS Assessment Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#060b14;--s1:#0d1525;--s2:#121e30;--bd:#1c2d45;--ac:#3b82f6;--a2:#06b6d4;--ok:#10b981;--wn:#f59e0b;--er:#ef4444;--t1:#e2e8f0;--t2:#94a3b8;--t3:#4b6178;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;}
+.screen{display:none;min-height:100vh;}.screen.active{display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03)1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03)1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+.btn{padding:11px 22px;border-radius:10px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.bp{background:linear-gradient(135deg,var(--ac),#1d4ed8);color:#fff;box-shadow:0 4px 18px rgba(59,130,246,.25);}
+.bp:hover{transform:translateY(-1px);}.bp:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.bs{background:var(--s2);color:var(--t1);border:1px solid var(--bd);}.bs:hover{border-color:var(--ac);color:var(--ac);}
+.bsm{padding:7px 13px;font-size:12px;border-radius:8px;}.blg{padding:14px 28px;font-size:15px;border-radius:12px;}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:26px;}
+.bdg{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.bb{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2);}
+.bg{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.2);}
+.by{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2);}
+.bc{background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.2);}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--t3);margin-bottom:7px;letter-spacing:.7px;text-transform:uppercase;}
+.fi{width:100%;padding:12px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:10px;color:var(--t1);font-family:'Sora',sans-serif;font-size:14px;transition:border-color .2s;}
+.fi:focus{outline:none;border-color:var(--ac);}.fi::placeholder{color:var(--t3);}
+.fsel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234b6178'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:15px;padding-right:36px;}
+.fg{margin-bottom:17px;}.em{color:#f87171;font-size:12px;margin-top:5px;display:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;vertical-align:middle;}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fu .4s ease forwards;}
+#sl{align-items:center;justify-content:center;padding:40px 20px;}
+.lh h1{font-size:clamp(24px,5vw,40px);font-weight:800;background:linear-gradient(135deg,#e2e8f0 30%,var(--ac),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.15;margin-bottom:10px;}
+.lh{text-align:center;margin-bottom:34px;}
+.tabs{display:flex;background:var(--s2);border-radius:11px;padding:5px;gap:5px;margin-bottom:20px;border:1px solid var(--bd);}
+.tb{flex:1;padding:9px;border-radius:8px;border:none;background:transparent;color:var(--t3);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+.tb.on{background:var(--ac);color:#fff;}
+#sd{align-items:center;justify-content:center;padding:40px 20px;}
+#sa{flex-direction:column;}
+.ah{padding:14px 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);background:rgba(6,11,20,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;}
+.pw{flex:1;margin:0 18px;}.pi{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px;font-weight:600;}
+.pb{height:5px;background:var(--s2);border-radius:999px;overflow:hidden;}
+.pf{height:100%;background:linear-gradient(90deg,var(--ac),var(--a2));border-radius:999px;transition:width .4s;}
+.tr{position:relative;width:48px;height:48px;flex-shrink:0;}.tr svg{transform:rotate(-90deg);}.tr circle{fill:none;stroke-width:4;}
+.tn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
+.qa{flex:1;display:flex;align-items:center;justify-content:center;padding:28px 18px;}
+.qc{width:100%;max-width:720px;}.qm{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.qn{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t3);}
+.sb{background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.12);border-radius:11px;padding:15px 17px;margin-bottom:20px;font-size:13px;line-height:1.65;color:var(--t2);}
+.qt{font-size:18px;font-weight:600;line-height:1.58;margin-bottom:24px;}.os{display:flex;flex-direction:column;gap:10px;}
+.op{display:flex;align-items:flex-start;gap:12px;padding:14px 17px;background:var(--s1);border:2px solid var(--bd);border-radius:11px;cursor:pointer;transition:all .18s;}
+.op:hover:not(.lk){border-color:var(--ac);background:rgba(59,130,246,.04);}
+.op.sel{border-color:var(--ac);background:rgba(59,130,246,.08);}
+.op.cor{border-color:var(--ok)!important;background:rgba(16,185,129,.07)!important;}
+.op.wr{border-color:var(--er)!important;background:rgba(239,68,68,.07)!important;}.op.lk{cursor:default;}
+.ol{width:27px;height:27px;border-radius:7px;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;font-family:'JetBrains Mono',monospace;transition:all .18s;}
+.op.sel .ol{background:var(--ac);border-color:var(--ac);color:#fff;}
+.op.cor .ol{background:var(--ok)!important;border-color:var(--ok)!important;color:#fff!important;}
+.op.wr .ol{background:var(--er)!important;border-color:var(--er)!important;color:#fff!important;}
+.ot{font-size:14px;line-height:1.5;padding-top:2px;}.nb{padding:17px 26px;display:flex;justify-content:flex-end;border-top:1px solid var(--bd);}
+#sr{align-items:center;justify-content:center;padding:40px 20px;}
+.rw{width:100%;max-width:540px;text-align:center;}
+.sg{position:relative;width:150px;height:150px;margin:0 auto 22px;}.sg svg{transform:rotate(-90deg);}.sg circle{fill:none;stroke-width:9;}
+.sc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.sn{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.gp{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:999px;font-size:14px;font-weight:700;margin-bottom:18px;}
+.gpp{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.22);}
+.gpg{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.22);}
+.gpn{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0;}
+.rc{background:var(--s1);border:1px solid var(--bd);border-radius:11px;padding:13px 10px;text-align:center;}
+.rv{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.rl{font-size:10px;color:var(--t3);margin-top:3px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.synbox{display:flex;align-items:center;gap:9px;padding:11px 15px;border-radius:10px;font-size:13px;font-weight:500;margin-top:12px;text-align:left;}
+.syn-l{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);color:#60a5fa;}
+.syn-ok{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18);color:#34d399;}
+.syn-er{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#f87171;}
+#sadm{flex-direction:column;}
+.admh{padding:15px 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd);background:rgba(6,11,20,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;}
+.adml{display:flex;flex:1;min-height:0;}
+.sdb{width:200px;background:var(--s1);border-right:1px solid var(--bd);padding:14px 10px;display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
+.si{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:9px;color:var(--t2);font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;border:none;background:transparent;width:100%;text-align:left;}
+.si:hover{background:var(--s2);color:var(--t1);}.si.on{background:rgba(59,130,246,.12);color:var(--ac);}
+.mc{flex:1;overflow-y:auto;padding:22px;}.pn{display:none;}.pn.on{display:block;}
+.str{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:13px;margin-bottom:22px;}
+.stb{background:var(--s1);border:1px solid var(--bd);border-radius:13px;padding:20px;position:relative;overflow:hidden;}
+.stb::after{content:'';position:absolute;top:-8px;right:-8px;width:65px;height:65px;border-radius:50%;opacity:.1;}
+.stb.b::after{background:var(--ac);}.stb.g::after{background:var(--ok);}.stb.c::after{background:var(--a2);}.stb.y::after{background:var(--wn);}
+.slb{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;}
+.svl{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}.shnt{font-size:11px;color:var(--t3);margin-top:4px;}
+.tw{overflow-x:auto;border-radius:11px;border:1px solid var(--bd);}
+table{width:100%;border-collapse:collapse;}thead tr{background:var(--s2);}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);}
+td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(28,45,69,.4);}
+tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(59,130,246,.02);}
+.emp{text-align:center;padding:40px;color:var(--t3);}
+.lnkr{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:9px;margin-top:9px;}
+.lnkv{flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--a2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tctl{display:flex;align-items:center;gap:12px;}
+.tdsp{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--ac);background:var(--s2);padding:9px 17px;border-radius:9px;border:1px solid var(--bd);min-width:66px;text-align:center;}
+/* Setup banner */
+.setup-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:16px 18px;margin-bottom:20px;font-size:13px;line-height:1.7;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s1);border:1px solid var(--bd);border-radius:11px;padding:11px 17px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(60px);opacity:0;transition:all .26s;display:flex;align-items:center;gap:8px;max-width:310px;box-shadow:0 8px 28px rgba(0,0,0,.4);}
+.toast.show{transform:translateY(0);opacity:1;}
+.tok{border-color:rgba(16,185,129,.35);color:#34d399;}.ter{border-color:rgba(239,68,68,.35);color:#f87171;}.ti{border-color:rgba(59,130,246,.35);color:#60a5fa;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
+@media(max-width:680px){.adml{flex-direction:column;}.sdb{width:100%;flex-direction:row;overflow-x:auto;padding:8px;}.si span:not(:first-child){display:none;}.str{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="sl" class="screen active">
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;">
+    <div style="width:100%;max-width:440px;">
+      <div class="lh fu">
+        <div style="width:66px;height:66px;background:linear-gradient(135deg,var(--ac),var(--a2));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 18px;box-shadow:0 8px 28px rgba(59,130,246,.28);">🎯</div>
+        <h1>Product Knowledge<br/>Assessment Portal</h1>
+        <p style="color:var(--t2);font-size:14px;margin-top:8px;">Role-based assessments for your product support team</p>
+      </div>
+      <div class="card fu" style="animation-delay:.07s">
+        <div class="tabs">
+          <button class="tb on" onclick="swTab('e',this)">👤 Employee</button>
+          <button class="tb" onclick="swTab('a',this)">🔐 Admin</button>
+        </div>
+        <div id="pe">
+          <div class="fg">
+            <label class="fl">Assessment Type</label>
+            <select class="fi fsel" id="sel-role" onchange="toggleRegion()">
+              <option value="">— Select your role —</option>
+              <option value="tech">L1 Support</option>
+              <option value="production">L2 Support</option>
+            </select>
+          </div>
+          <div class="fg" id="region-wrap" style="display:none">
+            <label class="fl">Region <span style="color:var(--er)">*</span></label>
+            <select class="fi fsel" id="sel-region">
+              <option value="">— Select your region —</option>
+              <option value="KA">KA</option>
+              <option value="TNKL">TNKL</option>
+              <option value="East">East</option>
+              <option value="North">North</option>
+              <option value="APTG">APTG</option>
+              <option value="MH">MH</option>
+              <option value="MP">MP</option>
+              <option value="RJ">RJ</option>
+              <option value="GJ">GJ</option>
+              <option value="HO">HO</option>
+            </select>
+            <div class="em" id="e-region">Please select your region</div>
+          </div>
+          <button class="btn bp blg" style="width:100%" onclick="goDet()">Start Assessment →</button>
+          
+        </div>
+        <div id="pa" style="display:none">
+          <div class="fg">
+            <label class="fl">Admin Password</label>
+            <input class="fi" type="password" id="apw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+            <div class="em" id="perr">❌ Incorrect password</div>
+          </div>
+          <button class="btn bp blg" style="width:100%" onclick="doLogin()">Access Dashboard →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DETAILS ══ -->
+<div id="sd" class="screen">
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;">
+    <div class="card fu" style="width:100%;max-width:460px;">
+      <div style="text-align:center;margin-bottom:22px;">
+        <div style="font-size:26px;margin-bottom:7px;">📋</div>
+        <h2 style="font-size:19px;font-weight:700;">Before We Begin</h2>
+        <p style="color:var(--t2);font-size:13px;margin-top:4px;">Fill in your details to proceed</p>
+      </div>
+      <div id="dbadge" style="text-align:center;margin-bottom:18px;"></div>
+      <div class="fg"><label class="fl">Employee ID <span style="color:var(--er)">*</span></label><input class="fi" type="text" id="feid" placeholder="e.g. EMP001"/><div class="em" id="eeid">Employee ID required</div></div>
+      <div class="fg"><label class="fl">Full Name <span style="color:var(--er)">*</span></label><input class="fi" type="text" id="fnm" placeholder="e.g. Rahul Sharma"/><div class="em" id="enm">Full name required</div></div>
+      <div class="fg"><label class="fl">Email Address <span style="color:var(--er)">*</span></label><input class="fi" type="email" id="feml" placeholder="e.g. rahul@company.com"/><div class="em" id="eeml">Email must be a valid @bitlasoft.com address</div></div>
+      <button class="btn bp blg" style="width:100%;margin-top:4px" onclick="beginTest()">Begin Assessment 🚀</button>
+      <button class="btn bs" style="width:100%;margin-top:9px" onclick="go('sl')">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ASSESSMENT ══ -->
+<div id="sa" class="screen">
+  <div class="ah">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--a2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;">🎯</div>
+      <div><div style="font-size:13px;font-weight:700" id="arl">—</div><div style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace" id="ael">—</div></div>
+    </div>
+    <div class="pw">
+      <div class="pi"><span id="ptxt">Q 1/30</span><span id="ppct">0%</span></div>
+      <div class="pb"><div class="pf" id="pfil" style="width:0%"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:80px;">
+      <div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px;">Time Left</div>
+      <div id="total-timer" style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:var(--ac);letter-spacing:1px;">25:00</div>
+    </div>
+  </div>
+  <div class="qa">
+    <div class="qc card">
+      <div class="qm">
+        <span class="qn" id="qnl">01/30</span>
+        <span class="bdg bb" id="qtl">MCQ</span>
+        <span class="bdg bc" id="qtop"></span>
+      </div>
+      <div id="scnl" style="display:none;margin-bottom:10px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);border-radius:7px;font-size:11px;font-weight:700;color:var(--wn);">📌 Scenario</span></div>
+      <div id="scnb" style="display:none" class="sb"></div>
+      <div class="qt" id="qtxt"></div>
+      <div class="os" id="opts"></div>
+    </div>
+  </div>
+  <div class="nb"><button class="btn bp" id="nxtbtn" onclick="nxtQ()" disabled>Next →</button></div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div id="sr" class="screen">
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;">
+    <div class="rw card fu">
+      <h2 style="font-size:19px;font-weight:700;margin-bottom:5px;">Assessment Complete 🎉</h2>
+      <p style="color:var(--t2);font-size:13px;margin-bottom:22px" id="rsub">—</p>
+      <div class="sg">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle style="stroke:var(--s2);" cx="75" cy="75" r="65" stroke-dasharray="408.4"/>
+          <circle id="sarc" cx="75" cy="75" r="65" stroke-dasharray="408.4" stroke-dashoffset="408.4" style="fill:none;stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);"/>
+        </svg>
+        <div class="sc"><div class="sn" id="rpct">0%</div><div style="font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-top:2px;">Score</div></div>
+      </div>
+      <div class="gp" id="rgrd">—</div>
+      <p id="rmsg" style="color:var(--t2);font-size:13px;line-height:1.65;margin-bottom:14px;"></p>
+      <p id="rpenalty" style="color:var(--wn);font-size:11px;margin-bottom:10px;margin-top:-10px;"></p><div class="rg">
+        <div class="rc"><div class="rv" id="rcor" style="color:var(--ok)">0</div><div class="rl">Correct</div></div>
+        <div class="rc"><div class="rv" id="rwrg" style="color:var(--er)">0</div><div class="rl">Wrong</div></div>
+        <div class="rc"><div class="rv" id="rskp" style="color:var(--wn)">0</div><div class="rl">Skipped</div></div>
+      </div>
+      <div class="synbox syn-l" id="synbox"><span class="sp"></span><span id="syntxt">Saving result to Google Sheets…</span></div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div id="sadm" class="screen">
+  <div class="admh">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--a2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;">🎯</div>
+      <div><div style="font-size:14px;font-weight:700;">Admin Dashboard</div><div style="font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;">Product Assessment Portal</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;">
+      <span class="bdg bg" id="lbadge">● Live</span>
+      <a id="sheet-link" href="https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/edit" target="_blank" class="btn bs bsm">📊 Open Sheet</a>
+      <button class="btn bs bsm" onclick="go('sl')">Logout</button>
+    </div>
+  </div>
+  <div class="adml">
+    <div class="sdb">
+      <button class="si on" onclick="swPanel('ov',this)"><span>📊</span><span>Overview</span></button>
+      <button class="si" onclick="swPanel('res',this)"><span>📋</span><span>All Results</span></button>
+      <button class="si" onclick="swPanel('lnk',this)"><span>🔗</span><span>Share Links</span></button>
+      <button class="si" onclick="swPanel('users',this)"><span>👥</span><span>Admin Users</span></button>
+      <button class="si" onclick="swPanel('cfg',this)"><span>⚙️</span><span>Settings</span></button>
+    </div>
+    <div class="mc">
+
+      <div class="pn on" id="pov">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:18px;font-weight:700;">Overview</div>
+          <button class="btn bs bsm" onclick="loadAdmin()">🔄 Refresh</button>
+        </div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">Results from Google Sheets via Apps Script</div>
+        <div id="setup-warn" class="setup-banner" style="display:none">
+          ⚠️ <strong>Setup Required:</strong> The Apps Script backend URL is not configured yet. 
+          Please follow the setup instructions in the <strong>Settings</strong> tab to activate result saving.
+        </div>
+        <div class="str">
+          <div class="stb b"><div class="slb">Total Attempts</div><div class="svl" id="stot">0</div><div class="shnt">All time</div></div>
+          <div class="stb g"><div class="slb">Professional</div><div class="svl" id="spro">0</div><div class="shnt">&gt;80%</div></div>
+          <div class="stb c"><div class="slb">Good</div><div class="svl" id="sgod">0</div><div class="shnt">50–80%</div></div>
+          <div class="stb y"><div class="slb">Needs Training</div><div class="svl" id="sntr">0</div><div class="shnt">&lt;50%</div></div>
+        </div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:13px;">Recent Assessments</div>
+          <div class="tw"><table>
+            <thead><tr><th>Name</th><th>Emp ID</th><th>Role</th><th>Region</th><th>Score</th><th>Grade</th><th>Date & Time</th></tr></thead>
+            <tbody id="tbrec"><tr><td colspan="6"><div class="emp">No results yet</div></td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="pn" id="pres">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:18px;font-weight:700;">All Results</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+            <select class="fi fsel bsm" id="freg" onchange="renderRes()" style="width:130px;padding:7px 30px 7px 10px;font-size:12px;">
+              <option value="">All Regions</option>
+              <option value="KA">KA</option><option value="TNKL">TNKL</option>
+              <option value="East">East</option><option value="North">North</option>
+              <option value="APTG">APTG</option><option value="MH">MH</option>
+              <option value="MP">MP</option><option value="RJ">RJ</option>
+              <option value="GJ">GJ</option><option value="HO">HO</option>
+            </select>
+            <select class="fi fsel bsm" id="frl" onchange="renderRes()" style="width:148px;padding:7px 30px 7px 10px;font-size:12px;"><option value="">All Roles</option><option value="L1 Support">L1 Support</option><option value="L2 Support">L2 Support</option></select>
+            <select class="fi fsel bsm" id="fgd" onchange="renderRes()" style="width:170px;padding:7px 30px 7px 10px;font-size:12px;"><option value="">All Grades</option><option value="Professional">Professional</option><option value="Good">Good</option><option value="Needs More Training">Needs More Training</option></select>
+            <button class="btn bs bsm" onclick="loadAdmin()">🔄 Refresh</button>
+            <button class="btn bs bsm" onclick="exportCSV()" style="border-color:var(--ok);color:var(--ok);">⬇ Export CSV</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Complete history from Google Sheets</div>
+        <div class="tw"><table>
+          <thead><tr><th>#</th><th>Emp ID</th><th>Name</th><th>Email</th><th>Role</th><th>Region</th><th>Score</th><th>✓</th><th>✗</th><th>—</th><th>Grade</th><th>Date</th></tr></thead>
+          <tbody id="tball"><tr><td colspan="12"><div class="emp">No results yet</div></td></tr></tbody>
+        </table></div>
+      </div>
+
+      <div class="pn" id="plnk">
+        <div style="font-size:18px;font-weight:700;margin-bottom:5px;">Share Links</div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:20px;">Send these links to your team — works from any browser, no login needed</div>
+        <div class="card" style="margin-bottom:13px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div><div style="font-weight:600;font-size:14px;">🔵 L1 Support</div><div style="font-size:12px;color:var(--t2);margin-top:2px;">25 MCQ + 5 Scenario</div></div><span class="bdg bb">L1</span></div>
+          <div class="lnkr"><div class="lnkv" id="ltch">—</div><button class="btn bs bsm" onclick="cpL('tech')">📋 Copy</button></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div><div style="font-weight:600;font-size:14px;">🟡 L2 Support</div><div style="font-size:12px;color:var(--t2);margin-top:2px;">25 MCQ + 5 Scenario</div></div><span class="bdg by">L2</span></div>
+          <div class="lnkr"><div class="lnkv" id="lprd">—</div><button class="btn bs bsm" onclick="cpL('production')">📋 Copy</button></div>
+        </div>
+      </div>
+
+      <div class="pn" id="pusers">
+        <div style="font-size:18px;font-weight:700;margin-bottom:5px;">Admin Users</div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:20px;">Create and manage admin accounts for your team</div>
+        <div class="card" style="margin-bottom:14px;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px;">➕ Create New Admin</div>
+          <div class="fg">
+            <label class="fl">Admin Name</label>
+            <input class="fi" type="text" id="new-adm-name" placeholder="e.g. Sridhar"/>
+          </div>
+          <div class="fg">
+            <label class="fl">Username</label>
+            <input class="fi" type="text" id="new-adm-user" placeholder="e.g. sridhar.n"/>
+          </div>
+          <div class="fg">
+            <label class="fl">Password</label>
+            <input class="fi" type="password" id="new-adm-pass" placeholder="Min 6 characters"/>
+          </div>
+          <button class="btn bp bsm" onclick="createAdmin()">Create Admin</button>
+          <div id="adm-create-msg" style="font-size:12px;margin-top:10px;display:none;"></div>
+        </div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px;">👥 Existing Admin Accounts</div>
+          <div id="admin-list"></div>
+        </div>
+      </div>
+
+      <div class="pn" id="pcfg">
+        <div style="font-size:18px;font-weight:700;margin-bottom:5px;">Settings</div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:20px;">Configure timer and backend</div>
+
+        <!-- APPS SCRIPT SETUP — THE KEY STEP -->
+        <div class="card" style="margin-bottom:14px;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--wn);">🔧 Step 1 — One-Time Backend Setup (Required)</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:14px;">
+            To save results from <strong style="color:var(--t1)">any device</strong> to Google Sheets:<br/>
+            <strong style="color:var(--t1)">1.</strong> Go to <a href="https://script.google.com" target="_blank" style="color:var(--a2);">script.google.com</a> → <strong>New Project</strong><br/>
+            <strong style="color:var(--t1)">2.</strong> Delete the default code, paste the code from <code style="background:var(--s2);padding:2px 6px;border-radius:4px;font-size:11px;">PS_Assessment_Backend_Script.gs</code> (in your Drive)<br/>
+            <strong style="color:var(--t1)">3.</strong> Click <strong>Deploy → New Deployment → Web App</strong><br/>
+            <strong style="color:var(--t1);">4.</strong> Set: <em>Execute as: <strong>Me</strong></em> | <em>Access: <strong>Anyone</strong></em> → Deploy<br/>
+            <strong style="color:var(--t1);">5.</strong> Copy the Web App URL and paste it below:
+          </div>
+          <div class="fg" style="margin-bottom:10px;">
+            <label class="fl">Apps Script Web App URL</label>
+            <input class="fi" type="url" id="script-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" style="font-size:12px;font-family:'JetBrains Mono',monospace;"/>
+          </div>
+          <button class="btn bp bsm" onclick="saveScriptUrl()">💾 Save URL</button>
+          <span id="url-saved" style="font-size:12px;color:var(--ok);margin-left:10px;display:none;">✓ Saved!</span>
+        </div>
+
+        <div class="card" style="margin-bottom:13px;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:13px;">⏱ Assessment Duration</div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--ac);background:var(--s2);padding:10px 20px;border-radius:9px;border:1px solid var(--bd);">25:00</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6;">Total time for all 30 questions combined.<br/>Timer auto-submits when time runs out.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:13px;">
+          <div style="font-size:14px;font-weight:600;margin-bottom:13px;">📊 Score Bands</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+            <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.16);border-radius:10px;padding:13px;text-align:center;"><div style="font-size:20px;">🏆</div><div style="font-weight:700;color:var(--ok);font-size:12px;margin-top:5px;">Professional</div><div style="font-size:11px;color:var(--t3);margin-top:2px;">&gt;80%</div></div>
+            <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.16);border-radius:10px;padding:13px;text-align:center;"><div style="font-size:20px;">👍</div><div style="font-weight:700;color:var(--ac);font-size:12px;margin-top:5px;">Good</div><div style="font-size:11px;color:var(--t3);margin-top:2px;">50–80%</div></div>
+            <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.16);border-radius:10px;padding:13px;text-align:center;"><div style="font-size:20px;">📚</div><div style="font-weight:700;color:var(--wn);font-size:12px;margin-top:5px;">Needs Training</div><div style="font-size:11px;color:var(--t3);margin-top:2px;">&lt;50%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="tst"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// BACKEND CONFIG — Google Apps Script Web App URL
+// Set via Admin > Settings after deployment
+// ═══════════════════════════════════════════════════════
+const LS_URL_KEY = 'ps_script_url';
+const LS_TMR_KEY = 'ps_timer';
+
+function getScriptUrl() { return 'https://script.google.com/macros/s/AKfycbyCBr-jiIupqmQnvdgB7prniqrsQdhCq4rijub_5aWOpHiDwiAL1zlbQPLiDUu9RlVA/exec'; } // URL hardcoded for all users
+
+// ═══════════════════════════════════════════════════════
+// SAVE RESULT — POST to Apps Script Web App
+// Works from ANY browser, ANY device — no login needed
+// ═══════════════════════════════════════════════════════
+async function saveResult(result) {
+  const url = getScriptUrl();
+  if (!url) {
+    // No URL configured — save locally as fallback
+    const arr = JSON.parse(localStorage.getItem('ps_local')||'[]');
+    arr.push(result);
+    localStorage.setItem('ps_local', JSON.stringify(arr));
+    return { ok: false, reason: 'no_url' };
+  }
+  try {
+    // Apps Script Web App accepts POST with no-cors mode
+    // We use no-cors because Apps Script returns opaque responses
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors', // Required for Apps Script — response will be opaque but request succeeds
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(result)
+    });
+    // With no-cors we can't read the response, but if no error is thrown, it worked
+    return { ok: true };
+  } catch(e) {
+    // Network error — save locally
+    const arr = JSON.parse(localStorage.getItem('ps_local')||'[]');
+    arr.push(result);
+    localStorage.setItem('ps_local', JSON.stringify(arr));
+    return { ok: false, reason: 'network' };
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOAD RESULTS — GET from Apps Script Web App
+// ═══════════════════════════════════════════════════════
+async function loadResults() {
+  const url = getScriptUrl();
+  if (!url) {
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
+  }
+  try {
+    const r = await fetch(url, { method: 'GET' });
+    const d = await r.json();
+    if (d.status === 'ok' && Array.isArray(d.results)) {
+      // Also merge any locally saved fallback results
+      const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
+      const all = [...d.results];
+      local.forEach(lr => {
+        const exists = all.some(r => r.empId===lr.empId && r.datetime===lr.datetime);
+        if (!exists) all.push(lr);
+      });
+      return all;
+    }
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
+  } catch(e) {
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// QUESTION BANK
+// ═══════════════════════════════════════════════════════
+const QS = {
+  tech:[
+    {t:"mcq",tp:"Associations",q:"In GDS, under which section can you create a new Association account?",o:["Main Menu > Reports", "GDS > Quick Links > Association", "Operator Side > Settings", "System Side > Configurations"],a:1},
+    {t:"mcq",tp:"Associations",q:"What does 'Operators – Yet to Join' show in the Association Dashboard?",o:["Deactivated operators", "Operators who have not yet joined the contract after invitation", "Operators with pending fare changes", "Operators who opted out permanently"],a:1},
+    {t:"mcq",tp:"Associations",q:"Which privilege must be enabled for an operator to see the association invitation notification?",o:["Show association request notification", "Validate association fare configuration", "Enable association contract view", "Allow association opt-in"],a:0},
+    {t:"mcq",tp:"Associations",q:"Where can an operator send a request to exit an association contract?",o:["Association Fare Configuration", "Change Requests > Association Opt-out", "GDS > Association Route", "Contracts / Rate Cards"],a:1},
+    {t:"mcq",tp:"Associations",q:"Who creates a new Bus Group Name under GDS >> Association Bus Groups?",o:["Only the bus operator", "Only the GDS admin", "Bitla team based on association group request", "Any agent with privileges"],a:2},
+    {t:"mcq",tp:"Associations",q:"What information is visible on the Association Login Dashboard under 'Total Possible Operators'?",o:["Only operators who joined the contract", "Total number of operators available across the entire state", "Operators who are inactive", "Operators pending approval"],a:1},
+    {t:"mcq",tp:"Associations",q:"In the Association login, what does the 'Terms and Condition' option allow the association group to do?",o:["View all operators", "Update terms and conditions shown to operators before accepting a contract", "Create new rate cards", "Send invitations to operators"],a:1},
+    {t:"mcq",tp:"Associations",q:"What is the purpose of 'Request for Changes' under Association Opt-out section?",o:["Create a new association contract", "Operators can request changes to minimum and maximum fare configurations", "Remove an operator from the association", "View all active contracts"],a:1},
+    {t:"mcq",tp:"Associations",q:"In Association Fare Configuration, what can be defined for specific city pairs?",o:["Only minimum fares", "Only maximum fares", "Different fares for each day", "Fixed fares that cannot be changed"],a:2},
+    {t:"mcq",tp:"Associations",q:"Under GDS >> System side >> Association Route (Multi Station wise), what can be created if city pairs are missing?",o:["New bus groups", "New association routes by selecting Association Name, Service, Origin, and Destination", "New fare configurations", "New operator accounts"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"Before sharing a chart with a child operator, what must the parent create first?",o:["Rate Card", "Commission Type", "Chart Sharing Role", "API Agent"],a:2},
+    {t:"mcq",tp:"Chart Sharing",q:"After the parent sends a chart sharing request, what status is shown initially?",o:["Approved", "Active", "Pending Approval", "Shared"],a:2},
+    {t:"mcq",tp:"Chart Sharing",q:"Which report shows commission details for child operators in chart sharing?",o:["User Wise Collection Report", "Chart Sharing Collection Report", "Bus Service Collection", "Payment Due Report"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"In Chart Sharing, what does the child operator need to do after receiving a request?",o:["Automatically accept it", "Either Approve or Reject the request", "Contact parent operator", "Email Bitla support"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"Under Chart Sharing, where does the parent operator navigate to send a contract?",o:["Main Menu > Reports", "Chart Sharing > Parent Side > +Share Another Chart", "System Side > Chart Sharing", "Settings > Share Chart"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"What must be enabled in the parent operator's Privilege Mgmt before starting chart sharing?",o:["Agent recharge privileges", "Chart sharing related privileges", "GST configuration privileges", "API access privileges"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"In the chart sharing popup, what details does the parent need to select before sending a request?",o:["Only the child operator name", "Child operator name, Role, Commission Type, and Services to share", "Only the services to share", "Only the commission type"],a:1},
+    {t:"mcq",tp:"Chart Sharing",q:"What happens once a Chart Sharing request is approved by the child operator?",o:["A pending status remains", "A success popup appears confirming chart sharing is enabled", "The parent gets notified by email", "The request is automatically rejected"],a:1},
+    {t:"mcq",tp:"System Side",q:"The GSM Label for SMS must be exactly how many characters?",o:["4", "6", "8", "10"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Public Cancellation Time' controls what for passengers?",o:["Time for admin to cancel", "Hours before departure within which passengers can cancel", "Processing time for agent cancellations", "Refund processing duration"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Blocked E-Booking Before Dep' restricts which type of booking?",o:["API bookings", "Branch bookings", "Public website e-ticket bookings", "Agent bookings"],a:2},
+    {t:"mcq",tp:"System Side",q:"'Unlock Service' under Background Jobs is used to unlock what?",o:["A locked operator account", "A service locked from the Pickup Chart", "A locked agent login", "A GDS session"],a:1},
+    {t:"mcq",tp:"System Side",q:"Which System Side config controls the maximum number of times a ticket can be shifted?",o:["Pre postponement times", "Shift Count", "Block Seats Release Time", "Blocking Grace Period"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Instant Recharge' mean for agents in Agent Recharge Configuration?",o:["Recharge requires operator approval", "Agents can add amount to their login immediately, similar to adding to a wallet", "Recharge is processed within 24 hours", "Operator manually credits the agent"],a:1},
+    {t:"mcq",tp:"System Side",q:"What is the purpose of 'IVR Configurations' in System Side?",o:["Configure SMS gateway", "Configure IVR calls with brand name or without, in the requested language", "Set up email notifications", "Configure WhatsApp messages"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Cancellation Policy — Cancel Based on Main Departure Time' mean?",o:["Cancellation based on booking time", "Cancellation policy is calculated on the main route departure time", "Cancellation policy is calculated on boarding point time", "No cancellation policy applies"],a:1},
+    {t:"mcq",tp:"System Side",q:"Which System Side option is used to add agents in bulk for operators?",o:["API Configuration", "Agent Upload", "Privilege Mgmt", "Customer Settings"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Max Child Fare Age' configuration control?",o:["Maximum age for senior citizen fare", "If passenger age is equal to or less than configured value, child fare is applied", "Maximum children allowed per booking", "Age limit for free travel"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Phone Number Validation Count' in System Side Configurations sets what?",o:["Max daily calls allowed", "Number of digits required for a valid phone number", "OTP retry attempts", "Phone number starting series"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Booking Page Appearance' in System Side allow admin to configure?",o:["Color theme of the booking page", "Font size as Normal, Large, or XLarge for both Single page and right-hand side", "Logo and banner images", "Navigation menu items"],a:1},
+    {t:"mcq",tp:"Reports",q:"Which report should a booking officer use to hand over daily payment to head office?",o:["User Wise Collection Report", "Amount Collected by You", "Online Branch/Agent Collection", "Payment Due Report"],a:1},
+    {t:"mcq",tp:"Reports",q:"What is the main purpose of the Payment Due Report?",o:["Track GST payments", "Update post-paid agent accounts when payment is received from agents", "Show pending e-ticket bookings", "Calculate branch commissions"],a:1},
+    {t:"mcq",tp:"Reports",q:"Which report identifies the most frequently used boarding points city-wise?",o:["Bus Service Collection", "Most Frequently Used Boarding Point", "Pending Confirmed/Released Tickets", "Online Branch/Agent Collection"],a:1},
+    {t:"mcq",tp:"Reports",q:"'E-Tickets Not Confirmed' shows tickets that were auto-released because of what?",o:["Cancelled by operator", "Payment not completed within tentative time", "Blocked by agents", "Wrong PNR details"],a:1},
+    {t:"mcq",tp:"Reports",q:"What does the 'Tickets Blocked by You' report show for users?",o:["All confirmed bookings", "Phone bookings and phone bookings done on behalf of offline agents", "Only cancelled tickets", "Only e-ticket bookings"],a:1},
+    {t:"mcq",tp:"Reports",q:"Which report helps operators verify the total amount settled by the accounts team each week?",o:["Payment Due Report", "Bus Service Collection Report", "Weekly Payment Received Report", "Online Branch/Agent Collection"],a:2},
+    {t:"mcq",tp:"Reports",q:"What does 'Bus Service Tie-up Report' track for main operators?",o:["Only fuel expenses", "Service-wise seat bookings for each tie-up operator across all booking channels", "Only cancellation details", "Commission details for agents"],a:1},
+    {t:"mcq",tp:"Reports",q:"What is the purpose of the 'Fuel Utility Report' option under Booking Page Quick Links?",o:["Only for admin use", "Users can record fuel filling data for coaches, pickup vans, charter services, and personal vehicles", "Only for tracking fuel costs", "Only accessible by the owner"],a:1},
+    {t:"mcq",tp:"App Config",q:"Which App Login Type forces the customer to sign up before booking?",o:["Manual", "Auto", "Forced", "Instant"],a:2},
+    {t:"mcq",tp:"App Config",q:"In 'Forced Signup with OTP Login', after entering phone number what happens?",o:["Redirected to booking page", "OTP sent — must enter to complete signup", "Asked to enter email", "Temporary password sent"],a:1},
+    {t:"mcq",tp:"App Config",q:"In 'Manual' Login Type, what happens when a customer tries to book without signing up?",o:["System forces them to sign up", "They can book tickets directly without signing up", "They receive an OTP to continue", "They are redirected to a registration page"],a:1},
+    {t:"mcq",tp:"App Config",q:"In 'Auto' Login Type, what option does a customer get if they don't want to sign up?",o:["They are forced to sign up", "They cannot book at all", "They can skip sign-up and proceed with booking", "They are automatically registered"],a:2},
+    {t:"mcq",tp:"Gallery",q:"How many banners can be uploaded in Website Pop-up Banner?",o:["5", "2", "3", "10"],a:2},
+    {t:"mcq",tp:"Gallery",q:"Where do Agent Login Page images appear?",o:["Public website homepage", "Booking page header", "Left side of internal website login page when agent logs in", "Mobile app gallery"],a:2},
+    {t:"mcq",tp:"Gallery",q:"What type of content can be uploaded under 'Video & Reels' in the Gallery?",o:["Only bus images", "Operator bus videos or any operator business-related reels via YouTube URL", "Direct video file uploads only", "Customer testimonial videos only"],a:1},
+    {t:"mcq",tp:"Gallery",q:"What is the purpose of 'User SRP Banner' in Gallery?",o:["Shown to agents only", "A banner visible to all Users when they log in, with information like new routes or agent discounts", "Shown on the public website homepage", "Shown only in the mobile app"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"Minimum password length in Password Policy configuration?",o:["6 characters", "8 characters", "10 characters", "12 characters"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"'Bulk Update of Security Control' configures which modes in bulk?",o:["Password reset for all", "Desktop login: NONE, OTP, MAC ID, or OTP+MAC ID", "Delete multiple users", "Upload agents in bulk"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"What is the purpose of 'PIN Authentication Policy' in Sensitive Privileges?",o:["Replace password login entirely", "Requires users to enter a PIN to perform secure actions, as an alternative to OTP or MAC ID", "Send PIN via email only", "Configure admin PIN only"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"What does 'Contact Details Masking — Mask Rolewise' do when enabled for a role?",o:["Hides the employee's details", "Users in that role cannot view the customer's complete mobile number — it appears partially masked", "Hides the booking amount", "Removes agent details from reports"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"In PIN Authentication Policy, what does 'Daily Limit to Regenerate PIN' control?",o:["How many times a PIN can be used in a day", "Maximum number of times a user can regenerate or request a new PIN in one day", "Number of login attempts allowed", "Number of OTPs sent per day"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"When 'Allow Cash Coupon In Public Side' is DISABLED, a cancellation gives the customer what?",o:["Cash Coupon Code", "Cash Credit", "Refund to original payment", "No refund"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"Which privilege must be enabled for a user to see the 'Open Ticket' option on the ticket print page?",o:["Allow to use the open ticket coupon", "Allow to make the ticket as Open Ticket", "Enable Open Ticket Of Online Agents", "Allow Cash Coupon In Public Side"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"Where can the admin see the coupon codes generated from Cash Coupon cancellations?",o:["System Side > Reports", "Operator Side > Settings > Coupons", "GDS > Quick Links > Coupons", "Booking Page > Quick Links"],a:1},
+    {t:"mcq",tp:"Sub Agent",q:"Before creating sub-agents, what must change first on the main agent?",o:["Enable sub-agent privilege in GDS", "Change type from Online Agent to Online Tie-up Agent", "Create a new branch", "Configure API agents"],a:1},
+    {t:"mcq",tp:"Sub Agent",q:"In the Sub Agent flow, what can the main Tie-up agent create under Manage >> Users?",o:["Only Sub Agents", "Only Sub Users", "Both Sub Agents and Sub Users", "Only new branches"],a:2},
+    {t:"mcq",tp:"Sub Agent",q:"When creating a Sub User, what does 'Allow Preferences' setting control?",o:["Commission type for the sub user", "Necessary access permissions assigned to the sub user", "Credit limit for the sub user", "Booking restrictions for the sub user"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Blocking Grace Period' configuration control?",o:["Time before departure when booking is blocked", "Hours before departure when all quota seats are released", "Minutes before departure for phone booking block", "Days before event when advance booking closes"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Finish Chart Validity' configuration control in System Side?",o:["When routes expire", "Duration for which the generated chart remains valid", "Date when new routes become active", "Time to complete a booking"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Min Senior Fare Age' configuration in System Side do?",o:["Minimum age for child fare", "If passenger age is equal to or greater than configured value, senior citizen fare is applied", "Minimum age for booking", "Maximum age for discounts"],a:1},
+    {t:"scenario",tp:"Associations",sc:"A bus operator sees the association invitation in GDS but cannot find the accept/reject option.",q:"Most likely reason?",o:["Contract has expired", "Required privileges not enabled for the operator's role", "GDS is down", "Account needs upgrade"],a:1},
+    {t:"scenario",tp:"System Side",sc:"An operator wants to stop agent bookings at least 60 minutes before departure.",q:"Which config to update?",o:["Blocking Grace Period", "Blocked Agent-Booking Before Dep", "Allow Time Blocking Before Dep Time", "Release Time Before Station Departure"],a:1},
+    {t:"scenario",tp:"Reports",sc:"A branch user says 'Amount Collected by You' shows bookings made on behalf of another agent.",q:"What to tell the user?",o:["The report is incorrect — escalate", "Expected — shows only own direct bookings, not on-behalf or phone bookings", "Includes all bookings from same branch", "System needs reconfiguration"],a:1},
+    {t:"scenario",tp:"App Config",sc:"Operator wants users to book without signup, but signup should be via OTP. Current type is 'Forced'.",q:"Which Login Type to configure?",o:["Manual", "Auto", "Forced Signup with OTP Login", "Forced"],a:2},
+    {t:"scenario",tp:"Gallery",sc:"Operator wants a new route launch banner on their website. They already have 3 banners in Website Pop-up Banner.",q:"What to advise?",o:["Delete all and re-upload", "Maximum is 3 — remove one existing banner first", "Upload in Mobile App Pop-up Banners instead", "Ask creative team to increase limit"],a:1},
+    {t:"scenario",tp:"Chart Sharing",sc:"A parent operator has created a Chart Sharing Role and added the child operator name in System Side. But the child operator cannot see any request under 'Chart Shared (Child Side)'.",q:"What is the most likely missing step?",o:["The parent has not sent the contract using +Share Another Chart button", "The child operator's account is inactive", "The route is not active", "The commission type is not configured"],a:0},
+    {t:"scenario",tp:"System Side",sc:"An operator complains that phone bookings are being released too early — 2 hours before departure — even though they want them released only 30 minutes before departure.",q:"Which configuration should the support team update?",o:["Public Cancellation Time", "Blocking Time Before Expiry", "Block Seats Release Time Before Dep Time", "Blocking Grace Period"],a:2},
+    {t:"scenario",tp:"Sensitive Priv",sc:"An operator wants to ensure all 50 branch users must login with both OTP and MAC ID verification, but doesn't want to configure each user one by one.",q:"Which feature should the support team use?",o:["PIN Authentication Policy", "Login Configuration", "Bulk Update of Security Control", "Contact Details Masking"],a:2},
+    {t:"scenario",tp:"Sub Agent",sc:"A main online agent wants to give booking access to 3 of their staff members with different access permissions for each. What is the correct setup?",q:"What should the support team configure?",o:["Create 3 separate online agents", "Change the main agent to Online Tie-up Agent and create Sub Users with appropriate preferences", "Create sub-agents with different commission types", "Create separate branch logins for each staff member"],a:1},
+    {t:"scenario",tp:"Open Ticket",sc:"An operator wants their online agents to be able to issue open ticket coupons to customers when cancelling tickets. Currently agents cannot see this option.",q:"Which system configuration needs to be enabled?",o:["Allow Cash Coupon In Public Side", "Enable Open Ticket Of Online Agents", "Allow to make the ticket as Open Ticket", "Open E-Ticket Coupon Validity"],a:1},
+  ],
+  production:[
+    {t:"mcq",tp:"GST",q:"Which GST report has PNR-wise details for CANCELLED AC bookings with refund amounts?",o:["GST Collection Report", "GST Booking Report", "GST Refund Report", "GST Filing Report"],a:2},
+    {t:"mcq",tp:"GST",q:"For a REGISTERED operator, who is responsible for GST on all AC bookings?",o:["Bitla/Paybitla", "The operator", "OTA partner", "Split between operator and Bitla"],a:1},
+    {t:"mcq",tp:"GST",q:"'GST Bifurcation Tally Report' covers which services?",o:["Only AC", "Only non-AC", "Both AC and Non-AC across all booking channels", "Only registered operators"],a:2},
+    {t:"mcq",tp:"GST",q:"Which report has CONFIRMED AC booking PNR details with IGST/CGST/SGST?",o:["GST Collection Report", "GST Booking Report", "GST Filing Report", "GST Bifurcation Tally Report"],a:1},
+    {t:"mcq",tp:"GST",q:"GST Filing Report 9(5) is referred to for which type of operators?",o:["Registered operators only", "Unregistered operators only", "Both registered and unregistered", "International operators only"],a:1},
+    {t:"mcq",tp:"GST",q:"For unregistered operators, who handles GST when an agent does booking using Paybitla Payment Gateway?",o:["The operator", "Bitla/Paybitla handles the GST", "The agent", "The OTA partner"],a:1},
+    {t:"mcq",tp:"GST",q:"In the GST Collection Report, what additional detail can you see by clicking 'more options'?",o:["Total refunds only", "PNR-wise collected GST amount", "Agent-wise GST breakup", "Service-wise cancellation amounts"],a:1},
+    {t:"mcq",tp:"GST",q:"Which GST report provides details by selecting either Travel Date or Issue Date?",o:["GST Collection Report", "GST Bifurcation Tally Report", "GST Booking Report", "GST Filing Report 9(5)"],a:2},
+    {t:"mcq",tp:"GST",q:"In the GST Filing Report, which of the following booking channels is included?",o:["Only Branch Bookings", "Only E-Ticket Bookings", "All AC service bookings made through any booking channel", "Only OTA Bookings"],a:2},
+    {t:"mcq",tp:"GST",q:"For an unregistered operator with branch booking made via Cash Payment, who is responsible for GST?",o:["The operator", "Bitla/Paybitla", "The branch", "GST does not apply"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"'Mask PIN in SMS WhatsApp Usage Report' does what?",o:["Deletes PIN from SMS", "Hides PIN in reports for security", "Sends PIN encrypted", "Prevents PIN regeneration"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"'Inactive Users/Agents Login if bookings not done' automatically does what?",o:["Forces password reset", "Marks User/Agent accounts as Inactive if no bookings in configured period", "Blocks wrong-password users", "Sends warning emails"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"Contact Details Masking applies to which booking sources?",o:["Only E-Bookings", "Only API and OTA", "All: Branch, Agent, OTA, E-Booking, API", "Only online agents"],a:2},
+    {t:"mcq",tp:"Sensitive Priv",q:"What does 'No. of Days to reset User login password' configuration do?",o:["Forces user to change password after configured days", "Deletes user account after configured days", "Blocks user login after configured days", "Sends a password reminder after configured days"],a:0},
+    {t:"mcq",tp:"Sensitive Priv",q:"In PIN Authentication Policy, what does 'First Time PIN Generate for New User' do?",o:["Forces user to create their own PIN", "System automatically generates an initial PIN for new users", "Sends a default PIN via email", "Requires admin to set PIN for new users"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"In Login Configuration, what happens when you add a role to the 'Roles' exclusion list?",o:["That role is blocked from login", "That role is excluded from the Inactive Users/Agents Login rule", "That role gets extra security", "That role's passwords are reset"],a:1},
+    {t:"mcq",tp:"Sensitive Priv",q:"What is the format of a masked phone number when Contact Details Masking is enabled?",o:["Completely hidden (****)", "First 2 digits visible rest hidden", "Partially masked format like 9*8*1*9*0*", "Last 4 digits visible rest hidden"],a:2},
+    {t:"mcq",tp:"Sensitive Priv",q:"What does 'No. of Days to reset Agent login password' configuration control?",o:["Agent account deletion timeline", "System automatically resets all agent passwords after the configured number of days", "Agent booking restrictions", "Agent commission changes"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Sync to API' in System Side does what?",o:["Syncs agent details to GDS", "Manually syncs active services with GDS API", "Syncs operator passwords", "Syncs routes with OTA portals"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Exclusion For Redbus' does what?",o:["Removes operator from all OTAs", "Blocks selected services from Redbus portal only", "Disables all API bookings", "Removes Redbus as API agent"],a:1},
+    {t:"mcq",tp:"System Side",q:"Which config controls how many times a user can pre/postpone a ticket?",o:["Shift Count", "Pre postponement times", "Allowed Time for Pre/Post Pone", "Blocking Grace Period"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Zero Percent Cancellation Before Multistation Departure Time' allows what charges?",o:["50%", "Standard charges", "0% cancellation charges", "As per configured policy"],a:2},
+    {t:"mcq",tp:"System Side",q:"'SSO Details' enables what for operators using Cargo Simply and Trackingo?",o:["Separate credentials per product", "Single Sign In — login once, switch between products", "Auto data sync", "Shared billing"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Report Custom Configuration' is used for?",o:["Create new reports from scratch", "Customize specific reports like User-wise Collection, Bus Service Collection etc.", "Delete old reports", "Schedule report emails"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Cancel Based on Boarding Stage Departure Time' calculates charges based on?",o:["Route start time", "Boarding stage departure time, not main departure", "Ticket issue date", "Cancellation request time"],a:1},
+    {t:"mcq",tp:"System Side",q:"Which config controls how many days before expiry driver/coach alerts are sent?",o:["Notification Visibility Days", "Alert Send No of Days Before", "SMS Hours After Dept", "No of Days Prior to Send Reminder SMS"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'IP Tracker' in System Side allow admins to check?",o:["Track customer locations", "IP address of the systems where users are logged in", "Internet speed of operators", "Block specific IP addresses"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Passenger Categories Settings' in System Side allow configuration of?",o:["Only ticket categories", "Passenger categories like Child, Senior Citizen with age limits and different fares", "Only refund categories", "Only booking source categories"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'SMS Trackers' in System Side allow admins to check?",o:["SMS marketing campaigns", "Whether SMS has been delivered by mobile number or PNR wise, with SMS content and delivery time", "Number of SMS credits remaining", "SMS template configurations"],a:1},
+    {t:"mcq",tp:"System Side",q:"What is the purpose of 'Ebooking Theme Config' in System Side?",o:["Configure agent login theme", "Set the operator website theme colour", "Change the GDS dashboard colour", "Configure mobile app theme"],a:1},
+    {t:"mcq",tp:"Master Company",q:"To make child company inventory live, what must be done?",o:["Enable GST for child company", "Untick services in Parent Company and assign to Child Company", "Create new routes", "Contact sales team"],a:1},
+    {t:"mcq",tp:"Master Company",q:"For child company API agents, 'Apply TDS-194O' must be enabled for which OTAs?",o:["Ticketsimply and Yourbus", "Redbus, Abhibus, and Paytm", "All OTAs", "Only Redbus"],a:1},
+    {t:"mcq",tp:"Master Company",q:"Path to verify if child company already exists?",o:["Operator Side > Settings > Company Master", "GDS > Quick Links > Manage Travels > Search Child Company Name", "System Side > Configurations > Company Details", "GDS > Association Configuration"],a:1},
+    {t:"mcq",tp:"Master Company",q:"What privilege must be enabled before the Company Master option appears under Settings?",o:["Manage GST Configuration", "Manage Company Master Configuration", "Enable API Access", "Chart Sharing Configuration"],a:1},
+    {t:"mcq",tp:"Master Company",q:"In Company Master, what is 'Associated API Agents' used for?",o:["Internal team agents only", "Assigning already created API agents like Ticketsimply, Redbus, Abhibus, Paytm to the company", "Creating new API agents", "Blocking specific API agents"],a:1},
+    {t:"mcq",tp:"Master Company",q:"After creating child company API agents, what should be shared with the sales team?",o:["The company GST number", "Child company API agent login details", "The Google Sheet ID", "The Apps Script URL"],a:1},
+    {t:"mcq",tp:"Master Company",q:"When should you go to Company Master > Inventory Split Configuration > Edit Child Company?",o:["During initial child company creation", "After sales team confirms OTA integration is complete", "When changing company GST details", "When updating company address"],a:1},
+    {t:"mcq",tp:"Master Company",q:"What is the path to create a new Master Company configuration?",o:["Operator Side > Settings > Manage GST", "Operator Side > Settings > Company Master > Inventory Split Configuration > Create New", "GDS > Quick Links > Company Master", "System Side > Company Configuration"],a:1},
+    {t:"mcq",tp:"Reports",q:"'Bus Service Collection' is matched with which report for commission calculations?",o:["Payment Due Report", "GST Collection Report", "User Wise Collection Report", "Weekly Payment Received Report"],a:1},
+    {t:"mcq",tp:"Reports",q:"Fuel Utility Report data is auto-reflected in which reports?",o:["Only Fuel Report", "Fuel Report and Profit & Loss Report", "Service Collection Report", "Bus Service Tie-up Report"],a:1},
+    {t:"mcq",tp:"Reports",q:"'Pending/Released Quota Seats Report' covers which users?",o:["Only Branch Users", "Only Online Agents", "All Branch Users and Agents", "Only API agents"],a:2},
+    {t:"mcq",tp:"Reports",q:"In 'Bus Service/Coach-wise Collection Report', what does 'Show Detailed View' allow?",o:["View the report on a map", "Download CSV with service-wise booked and cancelled PNR details", "Export to PDF", "Send report via email"],a:1},
+    {t:"mcq",tp:"Reports",q:"What does the 'E-Ticket Cancellation Report' allow operators to filter by?",o:["Only by travel date", "Only by issue date", "Travel Date, Issue Date, or Cancelled Date", "Only by route"],a:2},
+    {t:"mcq",tp:"Reports",q:"The 'WhatsApp Usage Report' allows operators to view what?",o:["WhatsApp marketing campaign results", "Details of WhatsApp messages triggered daily, searchable by mobile number or PNR", "Customer WhatsApp chat history", "Agent WhatsApp conversations"],a:1},
+    {t:"mcq",tp:"Reports",q:"What can operators check in the 'Detailed Online Agent Sub Users Report'?",o:["Only main agent bookings", "Booking details of sub-agents and sub-users for main agents", "Only cancelled bookings by sub-agents", "Only refund details for sub-agents"],a:1},
+    {t:"mcq",tp:"Reports",q:"What does the 'Pending Confirmed/Released Tickets' report allow operators to check?",o:["Only phone block pending tickets", "Branch users, online agents, API agents, branch/agent UPI pending and released ticket details, and phone block pending tickets", "Only API agent pending tickets", "Only UPI payment pending tickets"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"For Online Agents to use Open Ticket, which system config must be enabled?",o:["Allow Cash Coupon In Public Side", "Enable Open Ticket Of Online Agents", "Allow to make the ticket as Open Ticket", "Open E-Ticket Coupon Validity"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"Which privilege allows internal users to use Open Ticket coupon codes while booking?",o:["Allow to make the ticket as Open Ticket", "Allow to use the open ticket coupon", "Enable Open Ticket Of Online Agents", "Allow Cash Coupon In Public Side"],a:1},
+    {t:"mcq",tp:"Open Ticket",q:"What does 'Open E-Ticket Coupon Validity' configuration in System Side control?",o:["Maximum discount amount for coupons", "Number of days e-ticket coupons are valid from the date of generation", "Number of times a coupon can be used", "Minimum booking amount for coupon use"],a:1},
+    {t:"mcq",tp:"Sub Agent",q:"When a Tie-up agent creates a Sub Agent, what can they configure?",o:["Only sub-agent's password", "Commission type and credit limit", "Sub-agent GDS access level", "Booking city restrictions"],a:1},
+    {t:"mcq",tp:"Sub Agent",q:"What privilege enables a Tie-up agent to see the Manage >> Users option?",o:["Allow usage of sub users/agents for Online agents", "Enable Sub Agent Access", "Manage Agent Permissions", "Create Sub User Privilege"],a:0},
+    {t:"mcq",tp:"Sub Agent",q:"What is the difference between a Sub Agent and Sub User in the Tie-up agent flow?",o:["There is no difference", "Sub Agent has commission type and credit limit configured; Sub User has access permissions configured via Allow Preferences", "Sub Agent can book tickets; Sub User cannot", "Sub Agent is permanent; Sub User is temporary"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'GST Liability Configuration' in System Side show?",o:["Total GST collected", "Whether the operator is a Registered or Unregistered Company", "GST payment schedule", "GST exemption details"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Cancel Based on Multistation Wise Departure Time' means cancellation charges are calculated based on?",o:["Main route departure", "Multistation departure time for that specific booking origin", "Ticket issue time", "Boarding point time"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Allow Time Blocking Before Dep Time' configuration control?",o:["Time for online booking cutoff", "Minutes before departure until which users can block seats through phone booking", "Hours before departure for refund processing", "Duration of seat hold for online booking"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Re-release quota after auto release' configuration allow?",o:["Manually release all quota", "Allow re-release of quotas as per configured time whenever quota is auto released", "Delete quota permanently", "Transfer quota to another route"],a:1},
+    {t:"mcq",tp:"System Side",q:"'Cash On Delivery Grace Time' configuration controls what?",o:["Time for agent payment", "Cash-on-delivery tickets are released after the configured grace time", "Time for refund processing", "Duration for payment confirmation"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Success Ratio Percentage for Phone Booking' configuration do?",o:["Track agent success rates", "If configured percentage limit is exceeded for a number (blocks vs confirms), system will not allow further bookings from that number", "Calculate agent commissions", "Set booking success targets"],a:1},
+    {t:"mcq",tp:"System Side",q:"What is the purpose of 'Social Configuration' in System Side?",o:["Configure social media ads", "Configure social media login for customers", "Block social media access", "Configure social media sharing of tickets"],a:1},
+    {t:"mcq",tp:"System Side",q:"What does 'Ticket Print Details For E-ticket' in System Side allow configuration of?",o:["Only ticket color", "How the e-ticket print should look, including for update ticket and cancel ticket print", "Agent commission on e-tickets", "E-ticket validity duration"],a:1},
+    {t:"scenario",tp:"GST",sc:"A registered operator asks who files GST on AC E-ticket bookings via their own payment gateway.",q:"Correct answer?",o:["Bitla/Paybitla — it's E-ticket", "OTA partner is responsible", "Operator is fully responsible — they are registered", "GST doesn't apply to E-tickets"],a:2},
+    {t:"scenario",tp:"Master Company",sc:"A sales team member requests Company Master configuration. Production support must first verify if the child company already exists.",q:"Correct path to check?",o:["Operator Side > Settings > Company Master", "GDS > Quick Links > Manage Travels > Search Child Company Name", "System Side > Configurations > Company Details", "GDS > Association Configuration"],a:1},
+    {t:"scenario",tp:"System Side",sc:"A service was locked from Pickup Chart. Bookings cannot be processed. Need to unlock immediately.",q:"Where to go?",o:["Operator Side > Settings > Services", "GDS > System Side > Background Jobs > Unlock Service", "GDS > System Side > Sync to API", "Operator Side > Routes & Fares"],a:1},
+    {t:"scenario",tp:"Sensitive Priv",sc:"Need to configure OTP + MAC ID for 50 users at once, not one by one.",q:"Which feature to use?",o:["PIN Authentication Policy", "Login Configuration", "Bulk Update of Security Control", "Contact Details Masking"],a:2},
+    {t:"scenario",tp:"Reports",sc:"Accountant needs to verify weekly payments received from Bitla accounts team match the system.",q:"Which report to direct them to?",o:["Payment Due Report", "Bus Service Collection", "Weekly Payment Received Report", "Online Branch/Agent Collection"],a:2},
+    {t:"scenario",tp:"GST",sc:"An unregistered operator wants to know who handles GST when their agents use Paybitla payment gateway for bookings.",q:"Correct answer?",o:["The operator handles all GST", "Bitla/Paybitla handles the GST for Paybitla PG bookings for unregistered operators", "The agent handles GST", "No GST applies for agent bookings"],a:1},
+    {t:"scenario",tp:"Master Company",sc:"Production support receives a request to assign services to a newly created child company. The services currently show under the parent company.",q:"What is the correct procedure?",o:["Create new routes for child company directly", "Untick required services in the Parent Company and then assign those services to the Child Company", "Contact the sales team to activate child company", "Delete parent company services and recreate under child company"],a:1},
+    {t:"scenario",tp:"System Side",sc:"An operator reports that their OTA partner Redbus is showing services that the operator doesn't want listed on Redbus, but those services should remain on other OTAs.",q:"Which System Side option should production support use?",o:["API Configuration", "Exclusion For Redbus", "Sync to API", "Service Details"],a:1},
+    {t:"scenario",tp:"Reports",sc:"An operator wants to know how many WhatsApp messages were triggered for a specific customer mobile number over the last 30 days.",q:"Which report should production support direct the operator to?",o:["SMS Usage Report", "Bus Service Collection Report", "WhatsApp Usage Report", "User Wise Collection Report"],a:2},
+    {t:"scenario",tp:"Sensitive Priv",sc:"An operator reports that some users can see customer phone numbers in the Pickup Chart even though masking should be enabled for their role.",q:"What should production support check first?",o:["Check if the route is active", "Verify that 'Mask – Rolewise' is enabled for the specific role in Contact Details Masking configuration", "Check the operator's GST status", "Verify the agent login credentials"],a:1},
+  ]
+};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let S={role:null,eid:'',enm:'',eml:'',region:'',qs:[],cur:0,ans:[],tsec:45,tiv:null,tl:45,totalSec:1500,cache:[]};
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function toast(m,t='ok'){const el=document.getElementById('tst');el.textContent={'ok':'✓ ','er':'✗ ','i':'ℹ '}[t]+m;el.className='toast show t'+t;setTimeout(()=>el.className='toast',3200);}
+function scol(s){
+  let n=parseFloat(String(s).replace('%',''));
+  if(isNaN(n)) return 'var(--wn)';
+  if(n>0&&n<=1) n=Math.round(n*100);
+  else n=Math.round(n);
+  return n>80?'var(--ok)':n>=50?'var(--ac)':'var(--wn)';
+}
+function fmtScore(s){
+  let n = parseFloat(String(s).replace('%',''));
+  if(isNaN(n)) return '0%';
+  // Sheets stores 20% as 0.2 — detect and convert
+  if(n > 0 && n <= 1) n = Math.round(n * 100);
+  else n = Math.round(n);
+  return n+'%';
+}
+function fmtCorrect(c){ const n=parseInt(String(c))||0; return n; }
+function rbadge(r){return r==='L1 Support'?'<span class="bdg bb">L1 Support</span>':'<span class="bdg by">L2 Support</span>';}
+function gbadge(g){if(g==='Professional')return'<span class="bdg bg">🏆 Professional</span>';if(g==='Good')return'<span class="bdg bb">👍 Good</span>';return'<span class="bdg by">📚 Needs Training</span>';}
+function setSyn(t,m){const el=document.getElementById('synbox');el.className='synbox syn-'+t;el.innerHTML=(t==='l'?'<span class="sp"></span>':'')+`<span>${m}</span>`;}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION / LOGIN
+// ═══════════════════════════════════════════════════════
+// ── Toggle region dropdown for L1 ──
+function toggleRegion(){
+  const role = document.getElementById('sel-role').value;
+  document.getElementById('region-wrap').style.display = role === 'tech' ? 'block' : 'none';
+  if(role !== 'tech') document.getElementById('sel-region').value = '';
+}
+
+// ── Export CSV ──
+function exportCSV(){
+  const R = S.cache;
+  if(!R.length){ toast('No results to export','er'); return; }
+  const headers = ['Emp ID','Name','Email','Role','Region','Score','Correct','Wrong','Skipped','Grade','Date & Time'];
+  const rows = R.map(r => [
+    r.empId, r.empName, r.empEmail, r.role, r.region||'',
+    fmtScore(r.score), fmtCorrect(r.correct), r.wrong||0, r.skipped||0, r.grade, r.datetime
+  ]);
+  const csv = [headers, ...rows].map(row =>
+    row.map(v => '"'+String(v||'').replace(/"/g,'""')+'"').join(',')
+  ).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'PS_Assessment_Results_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV downloaded! ✓');
+}
+
+// ── Admin User Management ──
+const ADMIN_STORE_KEY = 'ps_admin_users';
+// Default admin always exists
+function getAdmins(){
+  const stored = JSON.parse(localStorage.getItem(ADMIN_STORE_KEY)||'[]');
+  return stored;
+}
+function saveAdmins(list){ localStorage.setItem(ADMIN_STORE_KEY, JSON.stringify(list)); }
+
+function createAdmin(){
+  const name = document.getElementById('new-adm-name').value.trim();
+  const user = document.getElementById('new-adm-user').value.trim();
+  const pass = document.getElementById('new-adm-pass').value.trim();
+  const msg  = document.getElementById('adm-create-msg');
+  if(!name||!user||!pass){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='All fields are required.'; return; }
+  if(pass.length < 6){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Password must be at least 6 characters.'; return; }
+  const admins = getAdmins();
+  if(admins.find(a=>a.user===user)){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Username already exists.'; return; }
+  admins.push({ name, user, pass: btoa(pass) });
+  saveAdmins(admins);
+  document.getElementById('new-adm-name').value='';
+  document.getElementById('new-adm-user').value='';
+  document.getElementById('new-adm-pass').value='';
+  msg.style.display='block'; msg.style.color='#34d399'; msg.textContent='✓ Admin "'+name+'" created successfully!';
+  setTimeout(()=>msg.style.display='none', 3000);
+  renderAdminList();
+}
+
+function deleteAdmin(user){
+  if(!confirm('Delete admin "'+user+'"?')) return;
+  const admins = getAdmins().filter(a=>a.user!==user);
+  saveAdmins(admins);
+  renderAdminList();
+  toast('Admin deleted');
+}
+
+function renderAdminList(){
+  const admins = getAdmins();
+  const el = document.getElementById('admin-list');
+  if(!admins.length){
+    el.innerHTML='<div style="font-size:13px;color:var(--t3);text-align:center;padding:16px;">No additional admins created yet.</div>';
+    return;
+  }
+  el.innerHTML = admins.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:600;font-size:13px;">${a.name}</div>
+        <div style="font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-top:2px;">@${a.user}</div>
+      </div>
+      <button class="btn bsm" style="border:1px solid rgba(239,68,68,.3);color:#f87171;background:rgba(239,68,68,.08);" onclick="deleteAdmin('${a.user}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+function swTab(p,el){document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.getElementById('pe').style.display=p==='e'?'block':'none';document.getElementById('pa').style.display=p==='a'?'block':'none';}
+function swPanel(id,el){
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('on'));el.classList.add('on');
+  document.querySelectorAll('.pn').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p'+id).classList.add('on');
+  if(id==='lnk')setLinks();
+  if(id==='users')renderAdminList();
+  if(id==='cfg'){
+    const url=getScriptUrl();
+    if(url)document.getElementById('script-url').value=url;
+    const v=parseInt(localStorage.getItem(LS_TMR_KEY)||'45');
+    document.getElementById('trng').value=v;document.getElementById('tdsp').textContent=v+'s';
+  }
+}
+function goDet(){
+  const r=document.getElementById('sel-role').value;
+  if(!r){toast('Please select your role','er');return;}
+  if(r==='tech'){
+    const reg=document.getElementById('sel-region').value;
+    if(!reg){ document.getElementById('e-region').style.display='block'; return; }
+    document.getElementById('e-region').style.display='none';
+    S.region=reg;
+  } else { S.region=''; }
+  S.role=r;
+  document.getElementById('dbadge').innerHTML=r==='tech'?'<span class="bdg bb">🔵 L1 Support</span>':'<span class="bdg by">🟡 L2 Support</span>';
+  go('sd');
+}
+function doLogin(){
+  const pw=document.getElementById('apw').value;
+  // Check master admin
+  const isMaster = btoa(pw)==='UHVuZWV0aGtANzg5';
+  // Check additional admins (username field used as password for simplicity — match by pass)
+  const extras = getAdmins();
+  const isExtra = extras.some(a => atob(a.pass)===pw);
+  if(isMaster||isExtra){
+    document.getElementById('perr').style.display='none';document.getElementById('apw').value='';
+    go('sadm');setLinks();loadAdmin();
+    document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
+    renderAdminList();
+  }else document.getElementById('perr').style.display='block';
+}
+function saveScriptUrl(){
+  const url=document.getElementById('script-url').value.trim();
+  if(!url||!url.includes('script.google.com')){toast('Please enter a valid Apps Script URL','er');return;}
+  localStorage.setItem(LS_URL_KEY,url);
+  document.getElementById('url-saved').style.display='inline';
+  document.getElementById('setup-warn').style.display='none';
+  setTimeout(()=>document.getElementById('url-saved').style.display='none',3000);
+  toast('Backend URL saved! ✓');
+}
+function saveTmr(){const v=parseInt(document.getElementById('trng').value);localStorage.setItem(LS_TMR_KEY,v);toast('Timer set to '+v+'s ✓');}
+
+// ═══════════════════════════════════════════════════════
+// ASSESSMENT
+// ═══════════════════════════════════════════════════════
+function beginTest(){
+  const eid=document.getElementById('feid').value.trim(),enm=document.getElementById('fnm').value.trim(),eml=document.getElementById('feml').value.trim();
+  let ok=true;['eid','nm','eml'].forEach(f=>document.getElementById('e'+f).style.display='none');
+  if(!eid){document.getElementById('eeid').style.display='block';ok=false;}
+  if(!enm){document.getElementById('enm').style.display='block';ok=false;}
+  if(!eml||!eml.toLowerCase().endsWith('@bitlasoft.com')){document.getElementById('eeml').style.display='block';ok=false;}
+  if(!ok)return;
+  S.eid=eid;S.enm=enm;S.eml=eml;
+  S.tsec=parseInt(localStorage.getItem(LS_TMR_KEY)||'45');
+  const pool=QS[S.role];
+  S.qs=shuf([...shuf(pool.filter(q=>q.t==='mcq')).slice(0,25),...shuf(pool.filter(q=>q.t==='scenario')).slice(0,5)]);
+  S.cur=0;S.ans=new Array(S.qs.length).fill(null);
+  document.getElementById('arl').textContent=S.role==='tech'?'L1 Support':'L2 Support';
+  document.getElementById('ael').textContent=enm;
+  go('sa');renderQ();startTotalTimer();
+}
+function renderQ(){
+  const q=S.qs[S.cur],i=S.cur,tot=S.qs.length;
+  document.getElementById('qnl').textContent=String(i+1).padStart(2,'0')+'/'+tot;
+  document.getElementById('ptxt').textContent='Q '+(i+1)+'/'+tot;
+  const pct=Math.round((i/tot)*100);
+  document.getElementById('ppct').textContent=pct+'%';document.getElementById('pfil').style.width=pct+'%';
+  document.getElementById('qtl').textContent=q.t==='mcq'?'MCQ':'Scenario';
+  document.getElementById('qtl').className='bdg '+(q.t==='mcq'?'bb':'by');
+  document.getElementById('qtop').textContent=q.tp;
+  const sl=document.getElementById('scnl'),sb=document.getElementById('scnb');
+  if(q.t==='scenario'){sl.style.display='inline-flex';sb.style.display='block';sb.textContent=q.sc;}else{sl.style.display='none';sb.style.display='none';}
+  document.getElementById('qtxt').textContent=q.q;
+  const si=shuf([0,1,2,3]),L=['A','B','C','D'],c=document.getElementById('opts');c.innerHTML='';
+  si.forEach((oi,di)=>{
+    const d=document.createElement('div');d.className='op';
+    d.innerHTML=`<div class="ol">${L[di]}</div><div class="ot">${q.o[oi]}</div>`;
+    d.dataset.oi=oi;d.onclick=()=>pickOpt(d,oi,q);c.appendChild(d);
+  });
+  if(S.ans[i]!==null){
+    c.querySelectorAll('.op').forEach(o=>{const oi=parseInt(o.dataset.oi);o.classList.add('lk');if(oi===S.ans[i])o.classList.add('sel');if(oi===q.a)o.classList.add('cor');if(oi===S.ans[i]&&oi!==q.a)o.classList.add('wr');});
+    document.getElementById('nxtbtn').disabled=false;
+  }else document.getElementById('nxtbtn').disabled=true;
+}
+function pickOpt(div,oi,q){
+  if(S.ans[S.cur]!==null)return;S.ans[S.cur]=oi;
+  document.querySelectorAll('.op').forEach(o=>{const ooi=parseInt(o.dataset.oi);o.classList.add('lk');if(ooi===q.a)o.classList.add('cor');if(ooi===oi)o.classList.add('sel');if(ooi===oi&&ooi!==q.a)o.classList.add('wr');});
+  document.getElementById('nxtbtn').disabled=false;
+}
+function resetTmr(){
+  // Per-question timer removed — using total 25-min countdown
+  // Just ensure next button is enabled if answer already selected
+}
+function updTmr(){
+  // No-op — total timer handles display
+}
+function startTotalTimer(){
+  clearInterval(S.tiv);
+  S.totalSec = 25 * 60; // 25 minutes
+  updateTotalTimerDisplay();
+  S.tiv = setInterval(()=>{
+    S.totalSec--;
+    updateTotalTimerDisplay();
+    if(S.totalSec <= 0){
+      clearInterval(S.tiv);
+      // Time up — auto-submit: mark all unanswered as skipped
+      for(let i=0;i<S.qs.length;i++){
+        if(S.ans[i]===null) S.ans[i]=-1;
+      }
+      finishTest();
+    }
+  }, 1000);
+}
+function updateTotalTimerDisplay(){
+  const m = Math.floor(S.totalSec / 60);
+  const s = S.totalSec % 60;
+  const display = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const el = document.getElementById('total-timer');
+  if(!el) return;
+  el.textContent = display;
+  // Color warning at 5 min and urgent at 2 min
+  if(S.totalSec <= 120) el.style.color = 'var(--er)';
+  else if(S.totalSec <= 300) el.style.color = 'var(--wn)';
+  else el.style.color = 'var(--ac)';
+}
+function nxtQ(){if(S.cur<S.qs.length-1){S.cur++;renderQ();}else finishTest();}
+
+// ═══════════════════════════════════════════════════════
+// FINISH + SAVE
+// ═══════════════════════════════════════════════════════
+async function finishTest(){
+  clearInterval(S.tiv);  // Stop total timer
+  let cor=0,wrg=0,skp=0;
+  S.qs.forEach((q,i)=>{const a=S.ans[i];if(a===null||a===-1)skp++;else if(a===q.a)cor++;else wrg++;});
+  const raw = ((cor - (skp * 0.5)) / S.qs.length) * 100; const score = Math.max(0, Math.round(raw));
+  let grade,gpCls,msg;
+  if(score>80){grade='Professional';gpCls='gpp';msg='🏆 Excellent! Outstanding product knowledge.';}
+  else if(score>=50){grade='Good';gpCls='gpg';msg='👍 Good performance! Solid understanding with some areas to improve.';}
+  else{grade='Needs More Training';gpCls='gpn';msg='📚 More training required. Please review the materials and retake.';}
+
+  const now=new Date();
+  const result={
+    empId:S.eid,empName:S.enm,empEmail:S.eml,
+    role:S.role==='tech'?'L1 Support':'L2 Support',
+    region:S.region||'',
+    score,correct:cor,wrong:wrg,skipped:skp,grade,
+    datetime:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+  };
+
+  document.getElementById('rsub').textContent='Great effort, '+S.enm+'!';
+  document.getElementById('rpct').textContent=score+'%';
+  document.getElementById('rgrd').className='gp '+gpCls;
+  document.getElementById('rgrd').textContent=(gpCls==='gpp'?'🏆 ':gpCls==='gpg'?'👍 ':'📚 ')+grade;
+  document.getElementById('rmsg').textContent=msg; document.getElementById('rpenalty').textContent=skp>0?'(-0.5 per unanswered question applied)':'';
+  document.getElementById('rcor').textContent=cor;document.getElementById('rwrg').textContent=wrg;document.getElementById('rskp').textContent=skp;
+  setSyn('l','Saving result to Google Sheets…');
+  go('sr');
+
+  setTimeout(()=>{
+    const circ=2*Math.PI*65,arc=document.getElementById('sarc');
+    arc.style.strokeDashoffset=circ*(1-score/100);
+    const col=score>80?'var(--ok)':score>=50?'var(--ac)':'var(--wn)';arc.style.stroke=col;
+    let c=0;const step=score/55,iv=setInterval(()=>{c=Math.min(c+step,score);document.getElementById('rpct').textContent=Math.round(c)+'%';document.getElementById('rpct').style.color=col;if(c>=score)clearInterval(iv);},22);
+  },250);
+
+  const saved = await saveResult(result);
+  if(saved.ok){
+    setSyn('ok','✅ Result saved to Google Sheets successfully!');
+  } else {
+    setSyn('er','⚠️ Network error. Result saved locally — admin will see it on refresh.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════
+async function loadAdmin(){
+  document.getElementById('lbadge').textContent='● Loading…';document.getElementById('lbadge').className='bdg bc';
+  const results=await loadResults();
+  S.cache=results;
+  document.getElementById('lbadge').textContent='● '+results.length+' result'+(results.length!==1?'s':'');
+  document.getElementById('lbadge').className='bdg bg';
+  renderOv();renderRes();
+}
+function renderOv(){
+  const R=S.cache;
+  document.getElementById('stot').textContent=R.length;
+  document.getElementById('spro').textContent=R.filter(r=>r.grade==='Professional').length;
+  document.getElementById('sgod').textContent=R.filter(r=>r.grade==='Good').length;
+  document.getElementById('sntr').textContent=R.filter(r=>r.grade==='Needs More Training').length;
+  const rec=[...R].reverse().slice(0,10),tb=document.getElementById('tbrec');
+  if(!rec.length){tb.innerHTML='<tr><td colspan="7"><div class="emp">No assessments yet</div></td></tr>';return;}
+  tb.innerHTML=rec.map(r=>`<tr>
+    <td style="font-weight:600">${r.empName}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t3)">${r.empId}</td>
+    <td>${rbadge(r.role)}</td>
+    <td style="font-size:12px;color:var(--t2);font-weight:600">${r.region||'—'}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${scol(r.score)}">${fmtScore(r.score)} <span style='font-size:10px;color:var(--t3);font-weight:400;'>(${fmtCorrect(r.correct)}/30)</span></td>
+    <td>${gbadge(r.grade)}</td>
+    <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
+  </tr>`).join('');
+}
+function renderRes(){
+  const rf=document.getElementById('frl').value,gf=document.getElementById('fgd').value,regf=document.getElementById('freg').value;
+  let R=[...S.cache].reverse();
+  if(rf)R=R.filter(r=>r.role===rf);
+  if(gf)R=R.filter(r=>r.grade===gf);
+  if(regf)R=R.filter(r=>r.region===regf);
+  const tb=document.getElementById('tball');
+  if(!R.length){tb.innerHTML='<tr><td colspan="12"><div class="emp">No results found</div></td></tr>';return;}
+  tb.innerHTML=R.map((r,i)=>`<tr>
+    <td style="color:var(--t3);font-size:11px">${i+1}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${r.empId}</td>
+    <td style="font-weight:600">${r.empName}</td>
+    <td style="font-size:11px;color:var(--t2)">${r.empEmail}</td>
+    <td>${rbadge(r.role)}</td>
+    <td style="font-size:12px;color:var(--t2);font-weight:600">${r.region||'—'}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${scol(r.score)}">${fmtScore(r.score)} <span style='font-size:10px;color:var(--t3);font-weight:400;'>(${fmtCorrect(r.correct)}/30)</span></td>
+    <td style="color:var(--ok);font-family:'JetBrains Mono',monospace">${r.correct}</td>
+    <td style="color:var(--er);font-family:'JetBrains Mono',monospace">${r.wrong}</td>
+    <td style="color:var(--wn);font-family:'JetBrains Mono',monospace">${r.skipped}</td>
+    <td>${gbadge(r.grade)}</td>
+    <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
+  </tr>`).join('');
+}
+function setLinks(){const b=window.location.href.split('?')[0];document.getElementById('ltch').textContent=b+'?role=tech';document.getElementById('lprd').textContent=b+'?role=production';}
+function cpL(r){navigator.clipboard.writeText(window.location.href.split('?')[0]+'?role='+r).then(()=>toast('Link copied! 📋'));}
+
+window.addEventListener('load',()=>{
+  const r=new URLSearchParams(window.location.search).get('role');
+  if(r==='tech'||r==='production'){S.role=r;document.getElementById('sel-role').value=r;document.getElementById('dbadge').innerHTML=r==='tech'?'<span class="bdg bb">🔵 L1 Support</span>':'<span class="bdg by">🟡 L2 Support</span>';go('sd');}
+});
+</script>
+<div style="text-align:center;padding:16px;font-size:11px;color:var(--t3);border-top:1px solid var(--bd);background:var(--s1);position:fixed;bottom:0;width:100%;z-index:50;">
+  Powered by <strong style="color:var(--t2)">BitlaSoft</strong>
+</div>
+<style>
+  /* Add bottom padding so content isn't hidden behind footer */
+  .screen{padding-bottom:44px;}
+  #sadm .mc{padding-bottom:56px;}
+</style>
+</body>
+</html>
