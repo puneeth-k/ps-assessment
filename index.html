@@ -155,9 +155,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(59,130,246,.02)
         </div>
         <div id="pa" style="display:none">
           <div class="fg">
-            <label class="fl">Admin Password</label>
+            <label class="fl">Username <span style="font-size:10px;color:var(--t3);text-transform:none;font-weight:400;">(leave blank if you are the main admin)</span></label>
+            <input class="fi" type="text" id="adm-uname" placeholder="Enter username (for sub-admins only)"/>
+          </div>
+          <div class="fg">
+            <label class="fl">Password</label>
             <input class="fi" type="password" id="apw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
-            <div class="em" id="perr">❌ Incorrect password</div>
+            <div class="em" id="perr">❌ Incorrect username or password</div>
           </div>
           <button class="btn bp blg" style="width:100%" onclick="doLogin()">Access Dashboard →</button>
         </div>
@@ -766,18 +770,26 @@ function goDet(){
   go('sd');
 }
 function doLogin(){
-  const pw=document.getElementById('apw').value;
-  // Check master admin
-  const isMaster = btoa(pw)==='UHVuZWV0aGtANzg5';
-  // Check additional admins (username field used as password for simplicity — match by pass)
-  const extras = getAdmins();
-  const isExtra = extras.some(a => atob(a.pass)===pw);
-  if(isMaster||isExtra){
-    document.getElementById('perr').style.display='none';document.getElementById('apw').value='';
+  const pw    = document.getElementById('apw').value;
+  const uname = document.getElementById('adm-uname').value.trim();
+
+  // Check master admin — no username needed, just password
+  const isMaster = (uname === '' || uname.toLowerCase() === 'admin') && btoa(pw)==='UHVuZWV0aGtANzg5';
+
+  // Check sub-admins — must match BOTH username AND password
+  const extras  = getAdmins();
+  const isExtra = uname !== '' && extras.some(a => a.user === uname && atob(a.pass) === pw);
+
+  if(isMaster || isExtra){
+    document.getElementById('perr').style.display='none';
+    document.getElementById('apw').value='';
+    document.getElementById('adm-uname').value='';
     go('sadm');setLinks();loadAdmin();
     document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
     renderAdminList();
-  }else document.getElementById('perr').style.display='block';
+  } else {
+    document.getElementById('perr').style.display='block';
+  }
 }
 function saveScriptUrl(){
   const url=document.getElementById('script-url').value.trim();
@@ -803,7 +815,31 @@ function beginTest(){
   S.eid=eid;S.enm=enm;S.eml=eml;
   S.tsec=parseInt(localStorage.getItem(LS_TMR_KEY)||'45');
   const pool=QS[S.role];
-  S.qs=shuf([...shuf(pool.filter(q=>q.t==='mcq')).slice(0,25),...shuf(pool.filter(q=>q.t==='scenario')).slice(0,5)]);
+  // ── Smart topic-aware question selection ──
+  // Rules: System Side min 5, Associations max 3, rest random to fill 25 MCQ
+  const allMcq   = shuf(pool.filter(q=>q.t==='mcq'));
+  const allScen  = shuf(pool.filter(q=>q.t==='scenario'));
+
+  const sysPool  = allMcq.filter(q=>q.tp==='System Side');
+  const assocPool= allMcq.filter(q=>q.tp==='Associations');
+  const otherPool= allMcq.filter(q=>q.tp!=='System Side' && q.tp!=='Associations');
+
+  // Pick minimum 5 System Side (up to all available)
+  const sysPicked    = sysPool.slice(0, Math.max(5, Math.floor(sysPool.length * 0.4)));
+  // Pick max 3 Associations
+  const assocPicked  = assocPool.slice(0, Math.min(3, assocPool.length));
+  // Fill remaining slots from other topics
+  const slotsLeft    = 25 - sysPicked.length - assocPicked.length;
+  const otherPicked  = otherPool.slice(0, slotsLeft);
+
+  // If still short (edge case), top up from system side extras
+  const combined = [...sysPicked, ...assocPicked, ...otherPicked];
+  if(combined.length < 25){
+    const extras = allMcq.filter(q=>!combined.includes(q)).slice(0, 25 - combined.length);
+    combined.push(...extras);
+  }
+
+  S.qs = shuf([...combined.slice(0,25), ...allScen.slice(0,5)]);
   S.cur=0;S.ans=new Array(S.qs.length).fill(null);
   document.getElementById('arl').textContent=S.role==='tech'?'L1 Support':'L2 Support';
   document.getElementById('ael').textContent=enm;
