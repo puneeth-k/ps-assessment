@@ -867,41 +867,59 @@ async function doLogin(){
   const perr  = document.getElementById('perr');
   const btn   = document.querySelector('#pa .btn');
 
-  // Check master admin — no username needed, just password
-  const isMaster = (uname === '' || uname.toLowerCase() === 'admin') && btoa(pw)==='UHVuZWV0aGtANzg5';
-
+  // ── Check master admin (hardcoded, always works) ──
+  const isMaster = (uname==='' || uname.toLowerCase()==='admin') && btoa(pw)==='UHVuZWV0aGtANzg5';
   if(isMaster){
     perr.style.display='none';
     document.getElementById('apw').value='';
     document.getElementById('adm-uname').value='';
     go('sadm'); setLinks(); loadAdmin();
     document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
-    await syncAdmins();
-    renderAdminList();
+    syncAdmins().then(()=>renderAdminList());
     return;
   }
 
-  // For sub-admins: fetch latest list from server then check
+  // ── Check sub-admins ──
   if(uname !== ''){
     if(btn){ btn.disabled=true; btn.textContent='Checking...'; }
     perr.style.display='none';
 
-    // Fetch from server to get latest admins (cross-device)
-    const admins = await fetchAdmins();
-    const match  = admins.find(a => a.user === uname && atob(a.pass) === pw);
+    // Step 1: Check localStorage first (fast, works offline)
+    const localAdmins = lsGetAdmins();
+    const localMatch  = localAdmins.find(a => a.user===uname && atob(a.pass)===pw);
 
-    if(btn){ btn.disabled=false; btn.textContent='Access Dashboard →'; }
-
-    if(match){
+    if(localMatch){
+      // Found in local cache — login immediately
+      if(btn){ btn.disabled=false; btn.textContent='Access Dashboard →'; }
       perr.style.display='none';
       document.getElementById('apw').value='';
       document.getElementById('adm-uname').value='';
       go('sadm'); setLinks(); loadAdmin();
       document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
-      _adminsCache = admins;
       renderAdminList();
       return;
     }
+
+    // Step 2: Try server (in case admin was created on a different device)
+    try {
+      const serverAdmins = await fetchAdmins();
+      const serverMatch  = serverAdmins.find(a => a.user===uname && atob(a.pass)===pw);
+      if(serverMatch){
+        // Found on server — cache locally and login
+        localStorage.setItem('ps_admins_cache', JSON.stringify(serverAdmins));
+        _adminsCache = serverAdmins;
+        if(btn){ btn.disabled=false; btn.textContent='Access Dashboard →'; }
+        perr.style.display='none';
+        document.getElementById('apw').value='';
+        document.getElementById('adm-uname').value='';
+        go('sadm'); setLinks(); loadAdmin();
+        document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
+        renderAdminList();
+        return;
+      }
+    } catch(e){}
+
+    if(btn){ btn.disabled=false; btn.textContent='Access Dashboard →'; }
   }
 
   perr.style.display='block';
