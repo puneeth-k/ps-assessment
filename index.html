@@ -689,43 +689,135 @@ function exportCSV(){
 }
 
 // ── Admin User Management ──
-const ADMIN_STORE_KEY = 'ps_admin_users';
-// Default admin always exists
-function getAdmins(){
-  const stored = JSON.parse(localStorage.getItem(ADMIN_STORE_KEY)||'[]');
-  return stored;
-}
-function saveAdmins(list){ localStorage.setItem(ADMIN_STORE_KEY, JSON.stringify(list)); }
+// ── Admin Users stored via Apps Script (central — works on all devices) ──
 
-function createAdmin(){
+// Cache admins in memory during session for fast login checks
+let _adminsCache = null;
+
+async function fetchAdmins(){
+  // Try Apps Script first
+  const url = getScriptUrl();
+  if(!url) return lsGetAdmins();
+  try {
+    const r = await fetch(url + '?action=getAdmins');
+    if(r.ok){
+      const d = await r.json();
+      if(d.status==='ok' && Array.isArray(d.admins)){
+        _adminsCache = d.admins;
+        // Also cache locally as fallback
+        localStorage.setItem('ps_admins_cache', JSON.stringify(d.admins));
+        return d.admins;
+      }
+    }
+  } catch(e){}
+  return lsGetAdmins();
+}
+
+function lsGetAdmins(){
+  // LocalStorage fallback
+  const cached = localStorage.getItem('ps_admins_cache');
+  if(cached) return JSON.parse(cached);
+  return [];
+}
+
+async function saveAdminToServer(adminObj){
+  const url = getScriptUrl();
+  if(!url) return false;
+  try {
+    await fetch(url, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'saveAdmin', admin: adminObj})
+    });
+    return true;
+  } catch(e){ return false; }
+}
+
+async function deleteAdminFromServer(username){
+  const url = getScriptUrl();
+  if(!url) return false;
+  try {
+    await fetch(url, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'deleteAdmin', user: username})
+    });
+    return true;
+  } catch(e){ return false; }
+}
+
+// Sync local cache from server (called when admin panel opens)
+async function syncAdmins(){
+  _adminsCache = await fetchAdmins();
+  return _adminsCache;
+}
+
+function getAdminsFromCache(){
+  if(_adminsCache) return _adminsCache;
+  return lsGetAdmins();
+}
+
+async function createAdmin(){
   const name = document.getElementById('new-adm-name').value.trim();
   const user = document.getElementById('new-adm-user').value.trim();
   const pass = document.getElementById('new-adm-pass').value.trim();
   const msg  = document.getElementById('adm-create-msg');
-  if(!name||!user||!pass){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='All fields are required.'; return; }
-  if(pass.length < 6){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Password must be at least 6 characters.'; return; }
-  const admins = getAdmins();
-  if(admins.find(a=>a.user===user)){ msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Username already exists.'; return; }
-  admins.push({ name, user, pass: btoa(pass) });
-  saveAdmins(admins);
+  msg.style.display='none';
+
+  if(!name||!user||!pass){
+    msg.style.display='block'; msg.style.color='#f87171';
+    msg.textContent='All fields are required.'; return;
+  }
+  if(pass.length < 6){
+    msg.style.display='block'; msg.style.color='#f87171';
+    msg.textContent='Password must be at least 6 characters.'; return;
+  }
+
+  // Check duplicate in cache
+  const existing = getAdminsFromCache();
+  if(existing.find(a=>a.user===user)){
+    msg.style.display='block'; msg.style.color='#f87171';
+    msg.textContent='Username already exists.'; return;
+  }
+
+  msg.style.display='block'; msg.style.color='#60a5fa';
+  msg.innerHTML='<span class="sp"></span> Creating admin...';
+
+  const adminObj = { name, user, pass: btoa(pass) };
+
+  // Save to Apps Script server
+  const ok = await saveAdminToServer(adminObj);
+
+  // Always update local cache too
+  const updated = [...existing, adminObj];
+  _adminsCache = updated;
+  localStorage.setItem('ps_admins_cache', JSON.stringify(updated));
+
   document.getElementById('new-adm-name').value='';
   document.getElementById('new-adm-user').value='';
   document.getElementById('new-adm-pass').value='';
-  msg.style.display='block'; msg.style.color='#34d399'; msg.textContent='✓ Admin "'+name+'" created successfully!';
-  setTimeout(()=>msg.style.display='none', 3000);
+
+  msg.style.display='block';
+  msg.style.color='#34d399';
+  msg.textContent = ok
+    ? '✓ Admin "'+name+'" created! They can login from any device.'
+    : '✓ Admin "'+name+'" created locally. Changes sync on next refresh.';
+  setTimeout(()=>msg.style.display='none', 4000);
   renderAdminList();
 }
 
-function deleteAdmin(user){
-  if(!confirm('Delete admin "'+user+'"?')) return;
-  const admins = getAdmins().filter(a=>a.user!==user);
-  saveAdmins(admins);
+async function deleteAdmin(username){
+  if(!confirm('Delete admin "'+username+'"?')) return;
+  await deleteAdminFromServer(username);
+  const updated = getAdminsFromCache().filter(a=>a.user!==username);
+  _adminsCache = updated;
+  localStorage.setItem('ps_admins_cache', JSON.stringify(updated));
   renderAdminList();
   toast('Admin deleted');
 }
 
 function renderAdminList(){
-  const admins = getAdmins();
+  const admins = getAdminsFromCache();
   const el = document.getElementById('admin-list');
   if(!admins.length){
     el.innerHTML='<div style="font-size:13px;color:var(--t3);text-align:center;padding:16px;">No additional admins created yet.</div>';
@@ -748,7 +840,7 @@ function swPanel(id,el){
   document.querySelectorAll('.pn').forEach(p=>p.classList.remove('on'));
   document.getElementById('p'+id).classList.add('on');
   if(id==='lnk')setLinks();
-  if(id==='users')renderAdminList();
+  if(id==='users'){ syncAdmins().then(()=>renderAdminList()); }
   if(id==='cfg'){
     const url=getScriptUrl();
     if(url)document.getElementById('script-url').value=url;
@@ -769,27 +861,50 @@ function goDet(){
   document.getElementById('dbadge').innerHTML=r==='tech'?'<span class="bdg bb">🔵 L1 Support</span>':'<span class="bdg by">🟡 L2 Support</span>';
   go('sd');
 }
-function doLogin(){
+async function doLogin(){
   const pw    = document.getElementById('apw').value;
   const uname = document.getElementById('adm-uname').value.trim();
+  const perr  = document.getElementById('perr');
+  const btn   = document.querySelector('#pa .btn');
 
   // Check master admin — no username needed, just password
   const isMaster = (uname === '' || uname.toLowerCase() === 'admin') && btoa(pw)==='UHVuZWV0aGtANzg5';
 
-  // Check sub-admins — must match BOTH username AND password
-  const extras  = getAdmins();
-  const isExtra = uname !== '' && extras.some(a => a.user === uname && atob(a.pass) === pw);
-
-  if(isMaster || isExtra){
-    document.getElementById('perr').style.display='none';
+  if(isMaster){
+    perr.style.display='none';
     document.getElementById('apw').value='';
     document.getElementById('adm-uname').value='';
-    go('sadm');setLinks();loadAdmin();
+    go('sadm'); setLinks(); loadAdmin();
     document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
+    await syncAdmins();
     renderAdminList();
-  } else {
-    document.getElementById('perr').style.display='block';
+    return;
   }
+
+  // For sub-admins: fetch latest list from server then check
+  if(uname !== ''){
+    if(btn){ btn.disabled=true; btn.textContent='Checking...'; }
+    perr.style.display='none';
+
+    // Fetch from server to get latest admins (cross-device)
+    const admins = await fetchAdmins();
+    const match  = admins.find(a => a.user === uname && atob(a.pass) === pw);
+
+    if(btn){ btn.disabled=false; btn.textContent='Access Dashboard →'; }
+
+    if(match){
+      perr.style.display='none';
+      document.getElementById('apw').value='';
+      document.getElementById('adm-uname').value='';
+      go('sadm'); setLinks(); loadAdmin();
+      document.getElementById('setup-warn').style.display=getScriptUrl()?'none':'block';
+      _adminsCache = admins;
+      renderAdminList();
+      return;
+    }
+  }
+
+  perr.style.display='block';
 }
 function saveScriptUrl(){
   const url=document.getElementById('script-url').value.trim();
