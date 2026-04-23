@@ -325,7 +325,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(59,130,246,.02)
         <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Complete history from Google Sheets</div>
         <div class="tw"><table>
           <thead><tr><th>#</th><th>Emp ID</th><th>Name</th><th>Email</th><th>Role</th><th>Region</th><th>Score</th><th>✓</th><th>✗</th><th>—</th><th>Grade</th><th>Date</th><th>Analysis</th></tr></thead>
-          <tbody id="tball"><tr><td colspan="12"><div class="emp">No results yet</div></td></tr></tbody>
+          <tbody id="tball"><tr><td colspan="13"><div class="emp">No results yet</div></td></tr></tbody>
         </table></div>
       </div>
 
@@ -679,11 +679,32 @@ function toggleRegion(){
 function exportCSV(){
   const R = S.cache;
   if(!R.length){ toast('No results to export','er'); return; }
-  const headers = ['Emp ID','Name','Email','Role','Region','Score','Correct','Wrong','Skipped','Grade','Date & Time'];
-  const rows = R.map(r => [
-    r.empId, r.empName, r.empEmail, r.role, r.region||'',
-    fmtScore(r.score), fmtCorrect(r.correct), r.wrong||0, r.skipped||0, r.grade, r.datetime
-  ]);
+  const headers = [
+    'Emp ID','Name','Email','Role','Region',
+    'Score','Correct','Wrong','Skipped','Grade',
+    'Date & Time','Weak Topics (Training Focus)'
+  ];
+  const rows = R.map(r => {
+    // Format weakTopics nicely for CSV
+    // e.g. "System Side(3 issues), Reports(1 issues)" → "System Side: 3 issues | Reports: 1 issue"
+    let wt = r.weakTopics || '';
+    if(wt && wt !== 'undefined'){
+      wt = wt.split(', ')
+        .filter(t => t.trim())
+        .map(t => {
+          const m = t.match(/^(.+)\((\d+) issues?\)$/);
+          return m ? m[1].trim() + ': ' + m[2] + ' issue' + (parseInt(m[2])>1?'s':'') : t;
+        })
+        .join(' | ');
+    } else {
+      wt = 'N/A (old result)';
+    }
+    return [
+      r.empId, r.empName, r.empEmail, r.role, r.region||'',
+      fmtScore(r.score), fmtCorrect(r.correct), r.wrong||0, r.skipped||0,
+      r.grade, r.datetime, wt
+    ];
+  });
   const csv = [headers, ...rows].map(row =>
     row.map(v => '"'+String(v||'').replace(/"/g,'""')+'"').join(',')
   ).join('\n');
@@ -1177,6 +1198,7 @@ function renderOv(){
     <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${scol(r.score)}">${fmtScore(r.score)} <span style='font-size:10px;color:var(--t3);font-weight:400;'>(${fmtCorrect(r.correct)}/30)</span></td>
     <td>${gbadge(r.grade)}</td>
     <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
+    <td><button class="btn bsm" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#60a5fa;white-space:nowrap;" onclick="showBreakdownById(${i})">📊 View</button></td>
   </tr>`).join('');
 }
 function renderRes(){
@@ -1200,6 +1222,7 @@ function renderRes(){
     <td style="color:var(--wn);font-family:'JetBrains Mono',monospace">${r.skipped}</td>
     <td>${gbadge(r.grade)}</td>
     <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
+    <td><button class="btn bsm" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#60a5fa;white-space:nowrap;" onclick="showBreakdownById(${i})">📊 View</button></td>
   </tr>`).join('');
 }
 function showBreakdownById(idx){
