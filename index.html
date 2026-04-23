@@ -461,48 +461,97 @@ async function saveResult(result) {
 // LOAD RESULTS — GET from Apps Script Web App
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
-  // Google Sheets Visualization API — bypasses CORS, no Apps Script needed for reading
-  const url = 'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:json&sheet=Results&headers=1';
+  // Google Sheets CSV export — simplest, most reliable, no CORS issues
+  // Works as long as sheet is shared as "Anyone with link can view"
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&gid=0';
+
   try {
-    const r    = await fetch(url, { credentials: 'omit' });
+    const r    = await fetch(CSV_URL, { credentials: 'omit' });
     const text = await r.text();
-    // Strip Google's wrapper: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
-    const clean = text.replace(/^[\s\S]*?setResponse\(/, '').replace(/\);?\s*$/, '');
-    const gdata = JSON.parse(clean);
-    if (!gdata.table || !gdata.table.rows) return lsResults();
-    const cols = gdata.table.cols.map(c => (c.label||'').toLowerCase().trim());
-    const idx  = k => cols.indexOf(k);
-    const val  = (row, i) => (i >= 0 && row.c && row.c[i] && row.c[i].v !== null && row.c[i].v !== undefined) ? String(row.c[i].v) : '';
-    const results = gdata.table.rows
-      .filter(row => row.c && row.c[0] && row.c[0].v)
-      .map(row => ({
-        empId:    val(row, idx('employee id')),
-        empName:  val(row, idx('name')),
-        empEmail: val(row, idx('email')),
-        role:     val(row, idx('role')),
-        region:   val(row, idx('region')),
-        score:    val(row, idx('score')),
-        correct:  val(row, idx('correct')),
-        wrong:    val(row, idx('wrong')),
-        skipped:  val(row, idx('skipped')),
-        grade:    val(row, idx('grade')),
-        datetime: val(row, idx('date & time')),
-      }));
-    // Cache for offline use
+
+    // Parse CSV
+    const lines = text.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return lsResults();
+
+    // Parse header row — remove quotes
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').toLowerCase().trim());
+
+    // Map column indices
+    const ci = {
+      empId:    headers.indexOf('employee id'),
+      empName:  headers.indexOf('name'),
+      empEmail: headers.indexOf('email'),
+      role:     headers.indexOf('role'),
+      region:   headers.indexOf('region'),
+      score:    headers.indexOf('score'),
+      correct:  headers.indexOf('correct'),
+      wrong:    headers.indexOf('wrong'),
+      skipped:  headers.indexOf('skipped'),
+      grade:    headers.indexOf('grade'),
+      datetime: headers.indexOf('date & time'),
+    };
+
+    // Parse each data row
+    const results = [];
+    for (let i = 1; i < lines.length; i++) {
+      // Handle CSV with quoted fields (some fields may contain commas)
+      const row = parseCSVRow(lines[i]);
+      if (!row || !row[ci.empId]) continue;
+      results.push({
+        empId:    (row[ci.empId]    ||'').trim(),
+        empName:  (row[ci.empName]  ||'').trim(),
+        empEmail: (row[ci.empEmail] ||'').trim(),
+        role:     (row[ci.role]     ||'').trim(),
+        region:   (row[ci.region]   ||'').trim(),
+        score:    (row[ci.score]    ||'').trim(),
+        correct:  (row[ci.correct]  ||'').trim(),
+        wrong:    (row[ci.wrong]    ||'').trim(),
+        skipped:  (row[ci.skipped]  ||'').trim(),
+        grade:    (row[ci.grade]    ||'').trim(),
+        datetime: (row[ci.datetime] ||'').trim(),
+      });
+    }
+
+    // Cache locally
     localStorage.setItem('ps_results_cache', JSON.stringify(results));
+
     // Merge any locally saved pending results
     const local = lsResults();
     local.forEach(lr => {
       if (!results.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
         results.push(lr);
     });
+
     return results;
+
   } catch(e) {
-    console.warn('loadResults failed:', e);
-    const cached = localStorage.getItem('ps_results_cache');
-    if (cached) try { return JSON.parse(cached); } catch(e2) {}
+    console.warn('loadResults error:', e);
+    // Try cache
+    try {
+      const cached = localStorage.getItem('ps_results_cache');
+      if (cached) return JSON.parse(cached);
+    } catch(e2) {}
     return lsResults();
   }
+}
+
+// Parse a single CSV row handling quoted fields
+function parseCSVRow(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
 }
 
 function lsResults() {
