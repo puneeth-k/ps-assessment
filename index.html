@@ -462,63 +462,31 @@ async function saveResult(result) {
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
   const url = getScriptUrl();
-  if (!url) {
-    return JSON.parse(localStorage.getItem('ps_local')||'[]');
-  }
+  if (!url) return JSON.parse(localStorage.getItem('ps_local')||'[]');
 
-  // Try fetching from Apps Script — plain GET, no extra params
-  // Apps Script Web App returns results by default on GET
-  return new Promise((resolve) => {
-    // Use script tag / JSONP approach to avoid CORS issues with Apps Script redirects
-    // This is the most reliable way to GET data from Apps Script in a browser
-    const cbName = 'psCallback_' + Date.now();
-    const script = document.createElement('script');
-
-    window[cbName] = function(data) {
-      // Cleanup
-      delete window[cbName];
-      document.head.removeChild(script);
-
-      let results = [];
-      if (data && data.status === 'ok' && Array.isArray(data.results)) {
-        results = data.results;
-      } else if (Array.isArray(data)) {
-        results = data;
-      }
-
-      // Merge with local fallback
+  try {
+    const r = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+    const text = await r.text();
+    const d = JSON.parse(text);
+    if (d.status === 'ok' && Array.isArray(d.results)) {
       const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
+      const all   = [...d.results];
       local.forEach(lr => {
-        const exists = results.some(r => r.empId===lr.empId && r.datetime===lr.datetime);
-        if (!exists) results.push(lr);
+        if (!all.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
+          all.push(lr);
       });
-      resolve(results);
-    };
+      return all;
+    }
+  } catch(e) { console.warn('loadResults error:', e); }
 
-    // Timeout fallback — if script doesn't load in 8s, use local storage
-    const timeout = setTimeout(() => {
-      if (window[cbName]) {
-        delete window[cbName];
-        try { document.head.removeChild(script); } catch(e){}
-        resolve(JSON.parse(localStorage.getItem('ps_local')||'[]'));
-      }
-    }, 8000);
-
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      try { document.head.removeChild(script); } catch(e){}
-      resolve(JSON.parse(localStorage.getItem('ps_local')||'[]'));
-    };
-
-    script.src = url + '?callback=' + cbName;
-    document.head.appendChild(script);
-  });
+  return JSON.parse(localStorage.getItem('ps_local')||'[]');
 }
 
-// ═══════════════════════════════════════════════════════
-// QUESTION BANK
-// ═══════════════════════════════════════════════════════
 const QS = {
   tech:[
     {t:"mcq",tp:"Associations",q:"In GDS, under which section can you create a new Association account?",o:["Main Menu > Reports", "GDS > Quick Links > Association", "Operator Side > Settings", "System Side > Configurations"],a:1},
@@ -759,41 +727,22 @@ let _adminsCache = null;
 async function fetchAdmins(){
   const url = getScriptUrl();
   if(!url) return lsGetAdmins();
-
-  return new Promise((resolve) => {
-    const cbName = 'psAdminCb_' + Date.now();
-    const script = document.createElement('script');
-
-    window[cbName] = function(data) {
-      delete window[cbName];
-      try { document.head.removeChild(script); } catch(e){}
-      if(data && data.status==='ok' && Array.isArray(data.admins)){
-        _adminsCache = data.admins;
-        localStorage.setItem('ps_admins_cache', JSON.stringify(data.admins));
-        resolve(data.admins);
-      } else {
-        resolve(lsGetAdmins());
-      }
-    };
-
-    const timeout = setTimeout(() => {
-      if(window[cbName]){
-        delete window[cbName];
-        try { document.head.removeChild(script); } catch(e){}
-        resolve(lsGetAdmins());
-      }
-    }, 8000);
-
-    script.onerror = () => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      try { document.head.removeChild(script); } catch(e){}
-      resolve(lsGetAdmins());
-    };
-
-    script.src = url + '?action=getAdmins&callback=' + cbName;
-    document.head.appendChild(script);
-  });
+  try {
+    const r = await fetch(url + '?action=getAdmins', {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-cache'
+    });
+    const text = await r.text();
+    const d = JSON.parse(text);
+    if(d.status==='ok' && Array.isArray(d.admins)){
+      _adminsCache = d.admins;
+      localStorage.setItem('ps_admins_cache', JSON.stringify(d.admins));
+      return d.admins;
+    }
+  } catch(e) { console.warn('fetchAdmins error:', e); }
+  return lsGetAdmins();
 }
 
 function lsGetAdmins(){
