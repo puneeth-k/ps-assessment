@@ -466,20 +466,42 @@ async function loadResults() {
     return JSON.parse(localStorage.getItem('ps_local')||'[]');
   }
   try {
-    const r = await fetch(url, { method: 'GET' });
-    const d = await r.json();
-    if (d.status === 'ok' && Array.isArray(d.results)) {
-      // Also merge any locally saved fallback results
+    // Use no-cors-safe approach: Apps Script GET returns JSON
+    const r = await fetch(url + '?action=getResults', {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    // Parse response — handle cases where it might be wrapped
+    let d;
+    try { d = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON'); }
+
+    // Handle both old format {status,results} and any wrapper
+    let results = null;
+    if (d && d.status === 'ok' && Array.isArray(d.results)) {
+      results = d.results;
+    } else if (Array.isArray(d)) {
+      results = d;
+    }
+
+    if (results !== null) {
+      // Merge with locally saved fallback results
       const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
-      const all = [...d.results];
+      const all = [...results];
       local.forEach(lr => {
-        const exists = all.some(r => r.empId===lr.empId && r.datetime===lr.datetime);
+        const exists = all.some(sr =>
+          sr.empId === lr.empId && sr.datetime === lr.datetime
+        );
         if (!exists) all.push(lr);
       });
       return all;
     }
+    // If response was not in expected format, fall back to local
+    console.warn('Unexpected response format:', d);
     return JSON.parse(localStorage.getItem('ps_local')||'[]');
   } catch(e) {
+    console.warn('loadResults error:', e);
     return JSON.parse(localStorage.getItem('ps_local')||'[]');
   }
 }
