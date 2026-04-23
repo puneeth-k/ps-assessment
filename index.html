@@ -461,36 +461,48 @@ async function saveResult(result) {
 // LOAD RESULTS — GET from Apps Script Web App
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
-  const url = getScriptUrl();
-  if (!url) return lsResults();
-
+  // Google Sheets Visualization API — bypasses CORS, no Apps Script needed for reading
+  const url = 'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:json&sheet=Results&headers=1';
   try {
-    const r = await fetch(url, {
-      method: 'GET',
-      credentials: 'omit',
-      cache: 'no-cache'
-    });
+    const r    = await fetch(url, { credentials: 'omit' });
     const text = await r.text();
-    const d    = JSON.parse(text);
-    if (d && d.status === 'ok' && Array.isArray(d.results)) {
-      // Cache in localStorage so it works even if next fetch fails
-      localStorage.setItem('ps_results_cache', JSON.stringify(d.results));
-      const local = lsResults();
-      const all   = [...d.results];
-      local.forEach(lr => {
-        if (!all.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
-          all.push(lr);
-      });
-      return all;
-    }
-  } catch(e) { console.warn('loadResults:', e); }
-
-  // Fallback: return cached results from localStorage
-  const cached = localStorage.getItem('ps_results_cache');
-  if (cached) {
-    try { return JSON.parse(cached); } catch(e) {}
+    // Strip Google's wrapper: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+    const clean = text.replace(/^[\s\S]*?setResponse\(/, '').replace(/\);?\s*$/, '');
+    const gdata = JSON.parse(clean);
+    if (!gdata.table || !gdata.table.rows) return lsResults();
+    const cols = gdata.table.cols.map(c => (c.label||'').toLowerCase().trim());
+    const idx  = k => cols.indexOf(k);
+    const val  = (row, i) => (i >= 0 && row.c && row.c[i] && row.c[i].v !== null && row.c[i].v !== undefined) ? String(row.c[i].v) : '';
+    const results = gdata.table.rows
+      .filter(row => row.c && row.c[0] && row.c[0].v)
+      .map(row => ({
+        empId:    val(row, idx('employee id')),
+        empName:  val(row, idx('name')),
+        empEmail: val(row, idx('email')),
+        role:     val(row, idx('role')),
+        region:   val(row, idx('region')),
+        score:    val(row, idx('score')),
+        correct:  val(row, idx('correct')),
+        wrong:    val(row, idx('wrong')),
+        skipped:  val(row, idx('skipped')),
+        grade:    val(row, idx('grade')),
+        datetime: val(row, idx('date & time')),
+      }));
+    // Cache for offline use
+    localStorage.setItem('ps_results_cache', JSON.stringify(results));
+    // Merge any locally saved pending results
+    const local = lsResults();
+    local.forEach(lr => {
+      if (!results.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
+        results.push(lr);
+    });
+    return results;
+  } catch(e) {
+    console.warn('loadResults failed:', e);
+    const cached = localStorage.getItem('ps_results_cache');
+    if (cached) try { return JSON.parse(cached); } catch(e2) {}
+    return lsResults();
   }
-  return lsResults();
 }
 
 function lsResults() {
