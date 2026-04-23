@@ -462,19 +462,20 @@ async function saveResult(result) {
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
   const url = getScriptUrl();
-  if (!url) return JSON.parse(localStorage.getItem('ps_local')||'[]');
+  if (!url) return lsResults();
 
   try {
     const r = await fetch(url, {
       method: 'GET',
-      mode: 'cors',
       credentials: 'omit',
       cache: 'no-cache'
     });
     const text = await r.text();
-    const d = JSON.parse(text);
-    if (d.status === 'ok' && Array.isArray(d.results)) {
-      const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
+    const d    = JSON.parse(text);
+    if (d && d.status === 'ok' && Array.isArray(d.results)) {
+      // Cache in localStorage so it works even if next fetch fails
+      localStorage.setItem('ps_results_cache', JSON.stringify(d.results));
+      const local = lsResults();
       const all   = [...d.results];
       local.forEach(lr => {
         if (!all.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
@@ -482,10 +483,20 @@ async function loadResults() {
       });
       return all;
     }
-  } catch(e) { console.warn('loadResults error:', e); }
+  } catch(e) { console.warn('loadResults:', e); }
 
+  // Fallback: return cached results from localStorage
+  const cached = localStorage.getItem('ps_results_cache');
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+  return lsResults();
+}
+
+function lsResults() {
   return JSON.parse(localStorage.getItem('ps_local')||'[]');
 }
+
 
 const QS = {
   tech:[
@@ -730,20 +741,20 @@ async function fetchAdmins(){
   try {
     const r = await fetch(url + '?action=getAdmins', {
       method: 'GET',
-      mode: 'cors',
       credentials: 'omit',
       cache: 'no-cache'
     });
     const text = await r.text();
-    const d = JSON.parse(text);
+    const d    = JSON.parse(text);
     if(d.status==='ok' && Array.isArray(d.admins)){
       _adminsCache = d.admins;
       localStorage.setItem('ps_admins_cache', JSON.stringify(d.admins));
       return d.admins;
     }
-  } catch(e) { console.warn('fetchAdmins error:', e); }
+  } catch(e) { console.warn('fetchAdmins:', e); }
   return lsGetAdmins();
 }
+
 
 function lsGetAdmins(){
   // LocalStorage fallback
