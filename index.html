@@ -1066,27 +1066,7 @@ async function finishTest(){
   else if(score>=50){grade='Good';gpCls='gpg';msg='👍 Good performance! Solid understanding with some areas to improve.';}
   else{grade='Needs More Training';gpCls='gpn';msg='📚 More training required. Please review the materials and retake.';}
 
-  const now=new Date();
-  const result={
-    empId:S.eid,empName:S.enm,empEmail:S.eml,
-    role:S.role==='tech'?'L1 Support':'L2 Support',
-    region:S.region||'',
-    score,correct:cor,wrong:wrg,skipped:skp,grade,
-    weakTopics: Object.entries(breakdown)
-      .filter(([t,v])=>v.wrong>0||v.skipped>0)
-      .sort((a,b)=>(b[1].wrong+b[1].skipped)-(a[1].wrong+a[1].skipped))
-      .map(([t,v])=>t+'('+(v.wrong+v.skipped)+' issues)')
-      .join(', '),
-    datetime:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
-  };
-
-  document.getElementById('rsub').textContent='Great effort, '+S.enm+'!';
-  document.getElementById('rpct').textContent=score+'%';
-  document.getElementById('rgrd').className='gp '+gpCls;
-  document.getElementById('rgrd').textContent=(gpCls==='gpp'?'🏆 ':gpCls==='gpg'?'👍 ':'📚 ')+grade;
-  document.getElementById('rmsg').textContent=msg; document.getElementById('rpenalty').textContent=skp>0?'(-0.5 per unanswered question applied)':'';
-  document.getElementById('rcor').textContent=cor;document.getElementById('rwrg').textContent=wrg;document.getElementById('rskp').textContent=skp;
-  // ── Build topic-wise breakdown ──
+  // ── Build topic-wise breakdown BEFORE result object ──
   const breakdown = {};
   S.qs.forEach((q,i)=>{
     const a = S.ans[i];
@@ -1096,10 +1076,28 @@ async function finishTest(){
     else if(a===q.a)     breakdown[q.tp].correct++;
     else                 breakdown[q.tp].wrong++;
   });
+  const weakTopicsStr = Object.entries(breakdown)
+    .filter(([t,v])=>v.wrong>0||v.skipped>0)
+    .sort((a,b)=>(b[1].wrong+b[1].skipped)-(a[1].wrong+a[1].skipped))
+    .map(([t,v])=>t+'('+(v.wrong+v.skipped)+' issues)')
+    .join(', ');
 
-  // Save breakdown in result object
-  result.breakdown = breakdown;
+  const now=new Date();
+  const result={
+    empId:S.eid,empName:S.enm,empEmail:S.eml,
+    role:S.role==='tech'?'L1 Support':'L2 Support',
+    region:S.region||'',
+    score,correct:cor,wrong:wrg,skipped:skp,grade,
+    weakTopics: weakTopicsStr,
+    datetime:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+  };
 
+  document.getElementById('rsub').textContent='Great effort, '+S.enm+'!';
+  document.getElementById('rpct').textContent=score+'%';
+  document.getElementById('rgrd').className='gp '+gpCls;
+  document.getElementById('rgrd').textContent=(gpCls==='gpp'?'🏆 ':gpCls==='gpg'?'👍 ':'📚 ')+grade;
+  document.getElementById('rmsg').textContent=msg; document.getElementById('rpenalty').textContent=skp>0?'(-0.5 per unanswered question applied)':'';
+  document.getElementById('rcor').textContent=cor;document.getElementById('rwrg').textContent=wrg;document.getElementById('rskp').textContent=skp;
   setSyn('l','Saving result to Google Sheets…');
   go('sr');
 
@@ -1121,19 +1119,19 @@ async function finishTest(){
     bl.innerHTML = weakTopics.map(([topic, v]) => {
       const pct = Math.round((v.correct / v.total) * 100);
       const barCol = pct>=70?'var(--ok)':pct>=40?'var(--wn)':'var(--er)';
-      return \`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;">\${topic}</span>
-          <span style="font-size:11px;color:var(--t3);">\${v.correct}/\${v.total} correct</span>
+          <span style="font-size:13px;font-weight:600;">${topic}</span>
+          <span style="font-size:11px;color:var(--t3);">${v.correct}/${v.total} correct</span>
         </div>
         <div style="height:5px;background:var(--bd);border-radius:999px;overflow:hidden;margin-bottom:7px;">
-          <div style="height:100%;width:\${pct}%;background:\${barCol};border-radius:999px;transition:width .6s;"></div>
+          <div style="height:100%;width:${pct}%;background:${barCol};border-radius:999px;transition:width .6s;"></div>
         </div>
         <div style="display:flex;gap:10px;font-size:11px;">
-          \${v.wrong>0?'<span style="color:var(--er);">✗ '+v.wrong+' wrong</span>':''}
-          \${v.skipped>0?'<span style="color:var(--wn);">— '+v.skipped+' skipped</span>':''}
+          ${v.wrong>0?'<span style="color:var(--er);">✗ '+v.wrong+' wrong</span>':''}
+          ${v.skipped>0?'<span style="color:var(--wn);">— '+v.skipped+' skipped</span>':''}
         </div>
-      </div>\`;
+      </div>`;
     }).join('');
   }, 600);
 
@@ -1204,6 +1202,19 @@ function renderRes(){
     <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
   </tr>`).join('');
 }
+function showBreakdownById(idx){
+  // Get result from cache by reverse index (since table is reversed)
+  const R = [...S.cache].reverse();
+  const rf  = document.getElementById('frl').value;
+  const gf  = document.getElementById('fgd').value;
+  const reg = document.getElementById('freg').value;
+  let filtered = R;
+  if(rf)  filtered = filtered.filter(r=>r.role===rf);
+  if(gf)  filtered = filtered.filter(r=>r.grade===gf);
+  if(reg) filtered = filtered.filter(r=>r.region===reg);
+  showBreakdown(filtered[idx]);
+}
+
 function showBreakdown(r){
   // Show modal with topic-wise breakdown
   document.getElementById('bm-name').textContent = r.empName + ' (#' + r.empId + ')';
@@ -1228,16 +1239,16 @@ function showBreakdown(r){
         if(!m) return '';
         const topic = m[1].trim(), issues = parseInt(m[2]);
         const col = issues>=3?'var(--er)':issues>=2?'var(--wn)':'var(--t2)';
-        return \`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;">
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;">
           <div style="display:flex;align-items:center;gap:9px;">
-            <span style="font-size:18px;">\${issues>=3?'🔴':issues>=2?'🟡':'🟠'}</span>
+            <span style="font-size:18px;">${issues>=3?'🔴':issues>=2?'🟡':'🟠'}</span>
             <div>
-              <div style="font-size:13px;font-weight:600;">\${topic}</div>
+              <div style="font-size:13px;font-weight:600;">${topic}</div>
               <div style="font-size:11px;color:var(--t3);margin-top:1px;">Needs revision</div>
             </div>
           </div>
-          <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:\${col};">\${issues} issue\${issues>1?'s':''}</span>
-        </div>\`;
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:${col};">${issues} issue${issues>1?'s':''}</span>
+        </div>`;
       }).join('');
 
       // Build recommendation text
@@ -1250,11 +1261,11 @@ function showBreakdown(r){
     }
   } else {
     // No breakdown data (old results before this feature)
-    topicsEl.innerHTML = \`<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px;">
+    topicsEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px;">
       <div style="font-size:24px;margin-bottom:8px;">ℹ️</div>
       Topic breakdown not available for this result.<br/>
       <span style="font-size:11px;">Only available for assessments taken after this feature was added.</span>
-    </div>\`;
+    </div>`;
     recEl.innerHTML = '';
   }
 
