@@ -465,45 +465,55 @@ async function loadResults() {
   if (!url) {
     return JSON.parse(localStorage.getItem('ps_local')||'[]');
   }
-  try {
-    // Use no-cors-safe approach: Apps Script GET returns JSON
-    const r = await fetch(url + '?action=getResults', {
-      method: 'GET',
-      redirect: 'follow'
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const text = await r.text();
-    // Parse response — handle cases where it might be wrapped
-    let d;
-    try { d = JSON.parse(text); } catch(e) { throw new Error('Invalid JSON'); }
 
-    // Handle both old format {status,results} and any wrapper
-    let results = null;
-    if (d && d.status === 'ok' && Array.isArray(d.results)) {
-      results = d.results;
-    } else if (Array.isArray(d)) {
-      results = d;
-    }
+  // Try fetching from Apps Script — plain GET, no extra params
+  // Apps Script Web App returns results by default on GET
+  return new Promise((resolve) => {
+    // Use script tag / JSONP approach to avoid CORS issues with Apps Script redirects
+    // This is the most reliable way to GET data from Apps Script in a browser
+    const cbName = 'psCallback_' + Date.now();
+    const script = document.createElement('script');
 
-    if (results !== null) {
-      // Merge with locally saved fallback results
+    window[cbName] = function(data) {
+      // Cleanup
+      delete window[cbName];
+      document.head.removeChild(script);
+
+      let results = [];
+      if (data && data.status === 'ok' && Array.isArray(data.results)) {
+        results = data.results;
+      } else if (Array.isArray(data)) {
+        results = data;
+      }
+
+      // Merge with local fallback
       const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
-      const all = [...results];
       local.forEach(lr => {
-        const exists = all.some(sr =>
-          sr.empId === lr.empId && sr.datetime === lr.datetime
-        );
-        if (!exists) all.push(lr);
+        const exists = results.some(r => r.empId===lr.empId && r.datetime===lr.datetime);
+        if (!exists) results.push(lr);
       });
-      return all;
-    }
-    // If response was not in expected format, fall back to local
-    console.warn('Unexpected response format:', d);
-    return JSON.parse(localStorage.getItem('ps_local')||'[]');
-  } catch(e) {
-    console.warn('loadResults error:', e);
-    return JSON.parse(localStorage.getItem('ps_local')||'[]');
-  }
+      resolve(results);
+    };
+
+    // Timeout fallback — if script doesn't load in 8s, use local storage
+    const timeout = setTimeout(() => {
+      if (window[cbName]) {
+        delete window[cbName];
+        try { document.head.removeChild(script); } catch(e){}
+        resolve(JSON.parse(localStorage.getItem('ps_local')||'[]'));
+      }
+    }, 8000);
+
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      try { document.head.removeChild(script); } catch(e){}
+      resolve(JSON.parse(localStorage.getItem('ps_local')||'[]'));
+    };
+
+    script.src = url + '?callback=' + cbName;
+    document.head.appendChild(script);
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -747,22 +757,43 @@ function exportCSV(){
 let _adminsCache = null;
 
 async function fetchAdmins(){
-  // Try Apps Script first
   const url = getScriptUrl();
   if(!url) return lsGetAdmins();
-  try {
-    const r = await fetch(url + '?action=getAdmins');
-    if(r.ok){
-      const d = await r.json();
-      if(d.status==='ok' && Array.isArray(d.admins)){
-        _adminsCache = d.admins;
-        // Also cache locally as fallback
-        localStorage.setItem('ps_admins_cache', JSON.stringify(d.admins));
-        return d.admins;
+
+  return new Promise((resolve) => {
+    const cbName = 'psAdminCb_' + Date.now();
+    const script = document.createElement('script');
+
+    window[cbName] = function(data) {
+      delete window[cbName];
+      try { document.head.removeChild(script); } catch(e){}
+      if(data && data.status==='ok' && Array.isArray(data.admins)){
+        _adminsCache = data.admins;
+        localStorage.setItem('ps_admins_cache', JSON.stringify(data.admins));
+        resolve(data.admins);
+      } else {
+        resolve(lsGetAdmins());
       }
-    }
-  } catch(e){}
-  return lsGetAdmins();
+    };
+
+    const timeout = setTimeout(() => {
+      if(window[cbName]){
+        delete window[cbName];
+        try { document.head.removeChild(script); } catch(e){}
+        resolve(lsGetAdmins());
+      }
+    }, 8000);
+
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      try { document.head.removeChild(script); } catch(e){}
+      resolve(lsGetAdmins());
+    };
+
+    script.src = url + '?action=getAdmins&callback=' + cbName;
+    document.head.appendChild(script);
+  });
 }
 
 function lsGetAdmins(){
