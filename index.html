@@ -242,6 +242,15 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(59,130,246,.02)
         <div class="rc"><div class="rv" id="rskp" style="color:var(--wn)">0</div><div class="rl">Skipped</div></div>
       </div>
       <div class="synbox syn-l" id="synbox"><span class="sp"></span><span id="syntxt">Saving result to Google Sheets…</span></div>
+
+      <!-- Topic-wise breakdown -->
+      <div id="rbreakdown" style="width:100%;margin-top:18px;display:none;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;text-align:left;display:flex;align-items:center;gap:7px;">
+          <span>📚 Topic-wise Breakdown</span>
+          <span style="font-size:10px;font-weight:400;color:var(--t3);">Focus areas for further training</span>
+        </div>
+        <div id="rblist"></div>
+      </div>
       
     </div>
   </div>
@@ -315,7 +324,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(59,130,246,.02)
         </div>
         <div style="font-size:12px;color:var(--t2);margin-bottom:18px;">Complete history from Google Sheets</div>
         <div class="tw"><table>
-          <thead><tr><th>#</th><th>Emp ID</th><th>Name</th><th>Email</th><th>Role</th><th>Region</th><th>Score</th><th>✓</th><th>✗</th><th>—</th><th>Grade</th><th>Date</th></tr></thead>
+          <thead><tr><th>#</th><th>Emp ID</th><th>Name</th><th>Email</th><th>Role</th><th>Region</th><th>Score</th><th>✓</th><th>✗</th><th>—</th><th>Grade</th><th>Date</th><th>Analysis</th></tr></thead>
           <tbody id="tball"><tr><td colspan="12"><div class="emp">No results yet</div></td></tr></tbody>
         </table></div>
       </div>
@@ -1063,6 +1072,11 @@ async function finishTest(){
     role:S.role==='tech'?'L1 Support':'L2 Support',
     region:S.region||'',
     score,correct:cor,wrong:wrg,skipped:skp,grade,
+    weakTopics: Object.entries(breakdown)
+      .filter(([t,v])=>v.wrong>0||v.skipped>0)
+      .sort((a,b)=>(b[1].wrong+b[1].skipped)-(a[1].wrong+a[1].skipped))
+      .map(([t,v])=>t+'('+(v.wrong+v.skipped)+' issues)')
+      .join(', '),
     datetime:now.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
   };
 
@@ -1072,8 +1086,56 @@ async function finishTest(){
   document.getElementById('rgrd').textContent=(gpCls==='gpp'?'🏆 ':gpCls==='gpg'?'👍 ':'📚 ')+grade;
   document.getElementById('rmsg').textContent=msg; document.getElementById('rpenalty').textContent=skp>0?'(-0.5 per unanswered question applied)':'';
   document.getElementById('rcor').textContent=cor;document.getElementById('rwrg').textContent=wrg;document.getElementById('rskp').textContent=skp;
+  // ── Build topic-wise breakdown ──
+  const breakdown = {};
+  S.qs.forEach((q,i)=>{
+    const a = S.ans[i];
+    if(!breakdown[q.tp]) breakdown[q.tp] = {correct:0, wrong:0, skipped:0, total:0};
+    breakdown[q.tp].total++;
+    if(a===null||a===-1) breakdown[q.tp].skipped++;
+    else if(a===q.a)     breakdown[q.tp].correct++;
+    else                 breakdown[q.tp].wrong++;
+  });
+
+  // Save breakdown in result object
+  result.breakdown = breakdown;
+
   setSyn('l','Saving result to Google Sheets…');
   go('sr');
+
+  // ── Render topic breakdown on employee result page ──
+  setTimeout(()=>{
+    const bd = document.getElementById('rbreakdown');
+    const bl = document.getElementById('rblist');
+    const weakTopics = Object.entries(breakdown)
+      .filter(([t,v]) => v.wrong > 0 || v.skipped > 0)
+      .sort((a,b) => (b[1].wrong+b[1].skipped) - (a[1].wrong+a[1].skipped));
+
+    if(weakTopics.length === 0){
+      bd.style.display = 'block';
+      bl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--ok);font-size:13px;font-weight:600;">🎉 Perfect! No weak areas found.</div>';
+      return;
+    }
+
+    bd.style.display = 'block';
+    bl.innerHTML = weakTopics.map(([topic, v]) => {
+      const pct = Math.round((v.correct / v.total) * 100);
+      const barCol = pct>=70?'var(--ok)':pct>=40?'var(--wn)':'var(--er)';
+      return \`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:600;">\${topic}</span>
+          <span style="font-size:11px;color:var(--t3);">\${v.correct}/\${v.total} correct</span>
+        </div>
+        <div style="height:5px;background:var(--bd);border-radius:999px;overflow:hidden;margin-bottom:7px;">
+          <div style="height:100%;width:\${pct}%;background:\${barCol};border-radius:999px;transition:width .6s;"></div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:11px;">
+          \${v.wrong>0?'<span style="color:var(--er);">✗ '+v.wrong+' wrong</span>':''}
+          \${v.skipped>0?'<span style="color:var(--wn);">— '+v.skipped+' skipped</span>':''}
+        </div>
+      </div>\`;
+    }).join('');
+  }, 600);
 
   setTimeout(()=>{
     const circ=2*Math.PI*65,arc=document.getElementById('sarc');
@@ -1126,7 +1188,7 @@ function renderRes(){
   if(gf)R=R.filter(r=>r.grade===gf);
   if(regf)R=R.filter(r=>r.region===regf);
   const tb=document.getElementById('tball');
-  if(!R.length){tb.innerHTML='<tr><td colspan="12"><div class="emp">No results found</div></td></tr>';return;}
+  if(!R.length){tb.innerHTML='<tr><td colspan="13"><div class="emp">No results found</div></td></tr>';return;}
   tb.innerHTML=R.map((r,i)=>`<tr>
     <td style="color:var(--t3);font-size:11px">${i+1}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${r.empId}</td>
@@ -1142,6 +1204,76 @@ function renderRes(){
     <td style="font-size:11px;color:var(--t3)">${r.datetime}</td>
   </tr>`).join('');
 }
+function showBreakdown(r){
+  // Show modal with topic-wise breakdown
+  document.getElementById('bm-name').textContent = r.empName + ' (#' + r.empId + ')';
+  document.getElementById('bm-meta').textContent = (r.role||'') + (r.region?' · '+r.region:'') + ' · ' + (r.datetime||'');
+  document.getElementById('bm-cor').textContent = fmtCorrect(r.correct);
+  document.getElementById('bm-wrg').textContent = r.wrong||0;
+  document.getElementById('bm-skp').textContent = r.skipped||0;
+
+  const topicsEl = document.getElementById('bm-topics');
+  const recEl    = document.getElementById('bm-recommendation');
+
+  // Try to parse stored weakTopics string
+  if(r.weakTopics && r.weakTopics.trim() && r.weakTopics !== 'undefined'){
+    // Parse "System Side(3 issues), Reports(1 issues)" format
+    const topics = r.weakTopics.split(', ').filter(t=>t.trim());
+    if(topics.length === 0){
+      topicsEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--ok);font-size:13px;">🎉 No weak areas — all answers correct!</div>';
+      recEl.innerHTML = '';
+    } else {
+      topicsEl.innerHTML = topics.map(t => {
+        const m = t.match(/^(.+)\((\d+) issues?\)$/);
+        if(!m) return '';
+        const topic = m[1].trim(), issues = parseInt(m[2]);
+        const col = issues>=3?'var(--er)':issues>=2?'var(--wn)':'var(--t2)';
+        return \`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;margin-bottom:7px;">
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span style="font-size:18px;">\${issues>=3?'🔴':issues>=2?'🟡':'🟠'}</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;">\${topic}</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:1px;">Needs revision</div>
+            </div>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:\${col};">\${issues} issue\${issues>1?'s':''}</span>
+        </div>\`;
+      }).join('');
+
+      // Build recommendation text
+      const topicNames = topics.map(t => {
+        const m = t.match(/^(.+)\(\d+ issues?\)$/);
+        return m ? m[1].trim() : t;
+      });
+      recEl.innerHTML = '<strong style="color:var(--t1);">📋 Training Recommendation:</strong><br/>Focus on <strong style="color:var(--ac);">' +
+        topicNames.join(', ') + '</strong>. Share the relevant documents with this employee for further study.';
+    }
+  } else {
+    // No breakdown data (old results before this feature)
+    topicsEl.innerHTML = \`<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px;">
+      <div style="font-size:24px;margin-bottom:8px;">ℹ️</div>
+      Topic breakdown not available for this result.<br/>
+      <span style="font-size:11px;">Only available for assessments taken after this feature was added.</span>
+    </div>\`;
+    recEl.innerHTML = '';
+  }
+
+  const modal = document.getElementById('breakdown-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBreakdown(){
+  document.getElementById('breakdown-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('breakdown-modal');
+  if(e.target === modal){ closeBreakdown(); }
+});
+
 function setLinks(){const b=window.location.href.split('?')[0];document.getElementById('ltch').textContent=b+'?role=tech';document.getElementById('lprd').textContent=b+'?role=production';}
 function cpL(r){navigator.clipboard.writeText(window.location.href.split('?')[0]+'?role='+r).then(()=>toast('Link copied! 📋'));}
 
@@ -1150,6 +1282,38 @@ window.addEventListener('load',()=>{
   if(r==='tech'||r==='production'){S.role=r;document.getElementById('sel-role').value=r;document.getElementById('dbadge').innerHTML=r==='tech'?'<span class="bdg bb">🔵 L1 Support</span>':'<span class="bdg by">🟡 L2 Support</span>';go('sd');}
 });
 </script>
+<!-- Topic Breakdown Modal -->
+<div id="breakdown-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:18px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--s1);z-index:1;">
+      <div>
+        <div style="font-size:16px;font-weight:700;" id="bm-name">—</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;" id="bm-meta">—</div>
+      </div>
+      <button onclick="closeBreakdown()" style="background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;">✕ Close</button>
+    </div>
+    <div style="padding:20px 24px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+        <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--ok);font-family:'JetBrains Mono',monospace;" id="bm-cor">—</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;text-transform:uppercase;font-weight:700;">Correct</div>
+        </div>
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--er);font-family:'JetBrains Mono',monospace;" id="bm-wrg">—</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;text-transform:uppercase;font-weight:700;">Wrong</div>
+        </div>
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--wn);font-family:'JetBrains Mono',monospace;" id="bm-skp">—</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;text-transform:uppercase;font-weight:700;">Skipped</div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📚 Topic-wise Weakness Analysis</div>
+      <div id="bm-topics"></div>
+      <div style="margin-top:16px;padding:12px 14px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;font-size:12px;color:var(--t2);line-height:1.6;" id="bm-recommendation"></div>
+    </div>
+  </div>
+</div>
+
 <div style="text-align:center;padding:16px;font-size:11px;color:var(--t3);border-top:1px solid var(--bd);background:var(--s1);position:fixed;bottom:0;width:100%;z-index:50;">
   Powered by <strong style="color:var(--t2)">BitlaSoft</strong>
 </div>
