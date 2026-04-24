@@ -461,81 +461,85 @@ async function saveResult(result) {
 // LOAD RESULTS — GET from Apps Script Web App
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
-  // Google Sheets CSV export — simplest, most reliable, no CORS issues
-  // Works as long as sheet is shared as "Anyone with link can view"
-  const CSV_URL = 'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&gid=0';
+  // Try multiple URL formats until one works
+  const urls = [
+    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&gid=0',
+    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/export?format=csv&gid=0',
+    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&sheet=Results'
+  ];
 
-  try {
-    const r    = await fetch(CSV_URL, { credentials: 'omit' });
-    const text = await r.text();
-
-    // Parse CSV
-    const lines = text.trim().split('\n').filter(l => l.trim());
-    if (lines.length < 2) return lsResults();
-
-    // Parse header row — remove quotes
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').toLowerCase().trim());
-
-    // Map column indices
-    const ci = {
-      empId:    headers.indexOf('employee id'),
-      empName:  headers.indexOf('name'),
-      empEmail: headers.indexOf('email'),
-      role:     headers.indexOf('role'),
-      region:   headers.indexOf('region'),
-      score:    headers.indexOf('score'),
-      correct:  headers.indexOf('correct'),
-      wrong:    headers.indexOf('wrong'),
-      skipped:  headers.indexOf('skipped'),
-      grade:    headers.indexOf('grade'),
-      datetime: headers.indexOf('date & time'),
-    };
-
-    // Parse each data row
-    const results = [];
-    for (let i = 1; i < lines.length; i++) {
-      // Handle CSV with quoted fields (some fields may contain commas)
-      const row = parseCSVRow(lines[i]);
-      if (!row || !row[ci.empId]) continue;
-      results.push({
-        empId:    (row[ci.empId]    ||'').trim(),
-        empName:  (row[ci.empName]  ||'').trim(),
-        empEmail: (row[ci.empEmail] ||'').trim(),
-        role:     (row[ci.role]     ||'').trim(),
-        region:   (row[ci.region]   ||'').trim(),
-        score:    (row[ci.score]    ||'').trim(),
-        correct:  (row[ci.correct]  ||'').trim(),
-        wrong:    (row[ci.wrong]    ||'').trim(),
-        skipped:  (row[ci.skipped]  ||'').trim(),
-        grade:    (row[ci.grade]    ||'').trim(),
-        datetime: (row[ci.datetime] ||'').trim(),
-      });
-    }
-
-    // Cache locally
-    localStorage.setItem('ps_results_cache', JSON.stringify(results));
-
-    // Merge any locally saved pending results
-    const local = lsResults();
-    local.forEach(lr => {
-      if (!results.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
-        results.push(lr);
-    });
-
-    return results;
-
-  } catch(e) {
-    console.warn('loadResults error:', e);
-    // Try cache
+  for (const url of urls) {
     try {
-      const cached = localStorage.getItem('ps_results_cache');
-      if (cached) return JSON.parse(cached);
-    } catch(e2) {}
-    return lsResults();
+      const r = await fetch(url, { credentials: 'omit', redirect: 'follow' });
+      if (!r.ok) continue;
+      const text = await r.text();
+      if (!text || text.length < 10) continue;
+
+      // Parse CSV
+      const lines = text.trim().split('\n').filter(l => l.trim());
+      if (lines.length < 2) continue;
+
+      // Parse header
+      const headers = parseCSVRow(lines[0]).map(h => (h||'').toLowerCase().trim());
+      const ci = {
+        empId:    headers.indexOf('employee id'),
+        empName:  headers.indexOf('name'),
+        empEmail: headers.indexOf('email'),
+        role:     headers.indexOf('role'),
+        region:   headers.indexOf('region'),
+        score:    headers.indexOf('score'),
+        correct:  headers.indexOf('correct'),
+        wrong:    headers.indexOf('wrong'),
+        skipped:  headers.indexOf('skipped'),
+        grade:    headers.indexOf('grade'),
+        datetime: headers.indexOf('date & time'),
+      };
+
+      // Parse data rows
+      const results = [];
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVRow(lines[i]);
+        if (!row || !row[ci.empId]) continue;
+        results.push({
+          empId:    (row[ci.empId]    ||'').trim(),
+          empName:  (row[ci.empName]  ||'').trim(),
+          empEmail: (row[ci.empEmail] ||'').trim(),
+          role:     (row[ci.role]     ||'').trim(),
+          region:   (row[ci.region]   ||'').trim(),
+          score:    (row[ci.score]    ||'').trim(),
+          correct:  (row[ci.correct]  ||'').trim(),
+          wrong:    (row[ci.wrong]    ||'').trim(),
+          skipped:  (row[ci.skipped]  ||'').trim(),
+          grade:    (row[ci.grade]    ||'').trim(),
+          datetime: (row[ci.datetime] ||'').trim(),
+        });
+      }
+
+      if (results.length > 0) {
+        localStorage.setItem('ps_results_cache', JSON.stringify(results));
+        // Merge with local pending
+        const local = lsResults();
+        local.forEach(lr => {
+          if (!results.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
+            results.push(lr);
+        });
+        return results;
+      }
+    } catch(e) {
+      console.warn('URL failed:', url, e);
+      continue;
+    }
   }
+
+  // All URLs failed — use cached data
+  console.warn('All CSV URLs failed, using cache');
+  try {
+    const cached = localStorage.getItem('ps_results_cache');
+    if (cached) return JSON.parse(cached);
+  } catch(e) {}
+  return lsResults();
 }
 
-// Parse a single CSV row handling quoted fields
 function parseCSVRow(line) {
   const result = [];
   let cur = '', inQ = false;
