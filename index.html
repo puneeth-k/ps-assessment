@@ -429,30 +429,28 @@ function getScriptUrl() { return 'https://script.google.com/macros/s/AKfycbyCBr-
 // Works from ANY browser, ANY device — no login needed
 // ═══════════════════════════════════════════════════════
 async function saveResult(result) {
-  const url = getScriptUrl();
-  if (!url) {
-    // No URL configured — save locally as fallback
-    const arr = JSON.parse(localStorage.getItem('ps_local')||'[]');
+  // ALWAYS save to localStorage first — this is what yesterday's dashboard showed
+  // This ensures the admin dashboard on THIS browser always shows recent results
+  const arr = JSON.parse(localStorage.getItem('ps_local')||'[]');
+  const exists = arr.some(r => r.empId===result.empId && r.datetime===result.datetime);
+  if (!exists) {
     arr.push(result);
     localStorage.setItem('ps_local', JSON.stringify(arr));
-    return { ok: false, reason: 'no_url' };
   }
+
+  // Also send to Apps Script / Google Sheets for central storage
+  const url = getScriptUrl();
+  if (!url) return { ok: false, reason: 'no_url' };
+
   try {
-    // Apps Script Web App accepts POST with no-cors mode
-    // We use no-cors because Apps Script returns opaque responses
     await fetch(url, {
       method: 'POST',
-      mode: 'no-cors', // Required for Apps Script — response will be opaque but request succeeds
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(result)
     });
-    // With no-cors we can't read the response, but if no error is thrown, it worked
     return { ok: true };
   } catch(e) {
-    // Network error — save locally
-    const arr = JSON.parse(localStorage.getItem('ps_local')||'[]');
-    arr.push(result);
-    localStorage.setItem('ps_local', JSON.stringify(arr));
     return { ok: false, reason: 'network' };
   }
 }
@@ -461,105 +459,26 @@ async function saveResult(result) {
 // LOAD RESULTS — GET from Apps Script Web App
 // ═══════════════════════════════════════════════════════
 async function loadResults() {
-  // Try multiple URL formats until one works
-  const urls = [
-    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&gid=0',
-    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/export?format=csv&gid=0',
-    'https://docs.google.com/spreadsheets/d/1IBRdKgtRxmdqkGFPbdk6ViiybXmxuYzFu8amJ-BuF4E/gviz/tq?tqx=out:csv&sheet=Results'
-  ];
-
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { credentials: 'omit', redirect: 'follow' });
-      if (!r.ok) continue;
-      const text = await r.text();
-      if (!text || text.length < 10) continue;
-
-      // Parse CSV
-      const lines = text.trim().split('\n').filter(l => l.trim());
-      if (lines.length < 2) continue;
-
-      // Parse header
-      const headers = parseCSVRow(lines[0]).map(h => (h||'').toLowerCase().trim());
-      const ci = {
-        empId:    headers.indexOf('employee id'),
-        empName:  headers.indexOf('name'),
-        empEmail: headers.indexOf('email'),
-        role:     headers.indexOf('role'),
-        region:   headers.indexOf('region'),
-        score:    headers.indexOf('score'),
-        correct:  headers.indexOf('correct'),
-        wrong:    headers.indexOf('wrong'),
-        skipped:  headers.indexOf('skipped'),
-        grade:    headers.indexOf('grade'),
-        datetime: headers.indexOf('date & time'),
-      };
-
-      // Parse data rows
-      const results = [];
-      for (let i = 1; i < lines.length; i++) {
-        const row = parseCSVRow(lines[i]);
-        if (!row || !row[ci.empId]) continue;
-        results.push({
-          empId:    (row[ci.empId]    ||'').trim(),
-          empName:  (row[ci.empName]  ||'').trim(),
-          empEmail: (row[ci.empEmail] ||'').trim(),
-          role:     (row[ci.role]     ||'').trim(),
-          region:   (row[ci.region]   ||'').trim(),
-          score:    (row[ci.score]    ||'').trim(),
-          correct:  (row[ci.correct]  ||'').trim(),
-          wrong:    (row[ci.wrong]    ||'').trim(),
-          skipped:  (row[ci.skipped]  ||'').trim(),
-          grade:    (row[ci.grade]    ||'').trim(),
-          datetime: (row[ci.datetime] ||'').trim(),
-        });
-      }
-
-      if (results.length > 0) {
-        localStorage.setItem('ps_results_cache', JSON.stringify(results));
-        // Merge with local pending
-        const local = lsResults();
-        local.forEach(lr => {
-          if (!results.some(r => r.empId===lr.empId && r.datetime===lr.datetime))
-            results.push(lr);
-        });
-        return results;
-      }
-    } catch(e) {
-      console.warn('URL failed:', url, e);
-      continue;
-    }
+  const url = getScriptUrl();
+  if (!url) {
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
   }
-
-  // All URLs failed — use cached data
-  console.warn('All CSV URLs failed, using cache');
   try {
-    const cached = localStorage.getItem('ps_results_cache');
-    if (cached) return JSON.parse(cached);
-  } catch(e) {}
-  return lsResults();
-}
-
-function parseCSVRow(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-    } else if (ch === ',' && !inQ) {
-      result.push(cur); cur = '';
-    } else {
-      cur += ch;
+    const r = await fetch(url, { method: 'GET' });
+    const d = await r.json();
+    if (d.status === 'ok' && Array.isArray(d.results)) {
+      const local = JSON.parse(localStorage.getItem('ps_local')||'[]');
+      const all = [...d.results];
+      local.forEach(lr => {
+        const exists = all.some(r => r.empId===lr.empId && r.datetime===lr.datetime);
+        if (!exists) all.push(lr);
+      });
+      return all;
     }
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
+  } catch(e) {
+    return JSON.parse(localStorage.getItem('ps_local')||'[]');
   }
-  result.push(cur);
-  return result;
-}
-
-function lsResults() {
-  return JSON.parse(localStorage.getItem('ps_local')||'[]');
 }
 
 
